@@ -92,10 +92,10 @@ var scope = app.Services.CreateAsyncScope();
 var migrationLogger = scope.ServiceProvider.GetRequiredService<ILogger<AtlasContext>>();
 var mercuryContext = scope.ServiceProvider.GetRequiredService<AtlasContext>();
 
-migrationLogger.LogInformation("Attempting to perform database migration.");
-try { await mercuryContext.Database.MigrateAsync().ConfigureAwait(false); } catch { }
-migrationLogger.LogInformation("Disposing migration container.");
-await scope.DisposeAsync().ConfigureAwait(false);
+migrationLogger.LogInformation("Attempting to perform database migration");
+await mercuryContext.Database.MigrateAsync();
+migrationLogger.LogInformation("Disposing migration container");
+await scope.DisposeAsync();
 
 app.Run();
 

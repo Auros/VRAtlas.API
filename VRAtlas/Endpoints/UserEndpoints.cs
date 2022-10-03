@@ -19,7 +19,7 @@ public static class UserEndpoints
         return builder;
     }
 
-    private static async Task<IResult> GetUserById(HttpContext context, Guid userId, AtlasContext atlasContext)
+    private static async Task<IResult> GetUserById(Guid userId, AtlasContext atlasContext)
     {
         var user = await atlasContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         return user is not null ? Results.Ok(user) : Results.NotFound();

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Serilog;
+using Serilog.Events;
 using VRAtlas;
 using VRAtlas.Endpoints;
 using VRAtlas.Models.Options;
@@ -8,6 +10,14 @@ using VRAtlas.Services;
 using VRAtlas.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Setup our logger with Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Async(options => options.Console())
+    .CreateLogger();
 
 var discord = builder.Configuration.GetRequiredSection("Auth:Providers:Discord");
 
@@ -19,6 +29,12 @@ builder.Services
     .AddScoped<IAuthService, AuthService>()
     .AddSingleton<IClock>(SystemClock.Instance)
     .AddSingleton<IImageCdnService, CloudflareImageCdnService>()
+    .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
+    .AddLogging(options =>
+    {
+        options.ClearProviders();
+        options.AddSerilog(Log.Logger);
+    })
     .AddOutputCache(options =>
     {
         options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1);
@@ -32,7 +48,6 @@ builder.Services
             npgsqlOptions.UseNodaTime();
         });
     })
-    .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {

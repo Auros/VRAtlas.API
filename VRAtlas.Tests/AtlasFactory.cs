@@ -8,13 +8,16 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StackExchange.Redis;
 using VRAtlas.Tests.Setup;
 
 namespace VRAtlas.Tests;
 
 public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private readonly TestcontainersContainer _redisContainer;
     private readonly PostgreSqlTestcontainer _databaseContainer;
+    private readonly int _redisPort = Random.Shared.Next(10_000, 60_000);
 
     public AtlasFactory()
     {
@@ -26,6 +29,14 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 Password = nameof(VRAtlas),
             })
             .Build();
+
+        _redisContainer = new TestcontainersBuilder<TestcontainersContainer>()
+            .WithImage("redis:latest")
+            .WithName("redis")
+            .WithEnvironment("REDIS_PASSWORD", nameof(VRAtlas))
+            .WithPortBinding(_redisPort, 6379)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(6379))
+            .Build();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -34,6 +45,7 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             services.RemoveAll<AtlasContext>();
             services.RemoveAll<IAuthService>();
+            services.RemoveAll<IConnectionMultiplexer>();
             services.AddScoped<IAuthService, TestAuthService>();
             services.AddDbContext<AtlasContext>(options =>
             {
@@ -42,6 +54,7 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                     npgsqlOptions.UseNodaTime();
                 });
             });
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect($"localhost:{_redisPort},password={nameof(VRAtlas)},allowAdmin=true"));
             services.AddAuthentication("Test")
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
         });
@@ -49,6 +62,7 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _redisContainer.StartAsync();
         await _databaseContainer.StartAsync();
         await SetupTestData();
     }
@@ -56,10 +70,14 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
     async Task IAsyncLifetime.DisposeAsync()
     {
         await _databaseContainer.StopAsync();
+        await _redisContainer.StopAsync();
     }
 
     private async Task SetupTestData()
     {
+        var multiplexer = Services.GetRequiredService<IConnectionMultiplexer>();
+        await multiplexer.GetServers().First().FlushAllDatabasesAsync();
+
         await using var scope = Services.CreateAsyncScope();
         var atlasContext = scope.ServiceProvider.GetRequiredService<AtlasContext>();
         atlasContext.Users.RemoveRange(atlasContext.Users);

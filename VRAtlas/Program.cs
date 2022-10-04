@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
+using StackExchange.Redis;
 using VRAtlas;
 using VRAtlas.Endpoints;
 using VRAtlas.Models.Options;
@@ -29,6 +30,7 @@ builder.Services
     .AddScoped<IAuthService, AuthService>()
     .AddSingleton<IClock>(SystemClock.Instance)
     .AddSingleton<IImageCdnService, CloudflareImageCdnService>()
+    .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .AddLogging(options =>
     {

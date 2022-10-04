@@ -51,7 +51,6 @@ public class AuthService : IAuthService
             // Upload their profile picture to our image CDN service.
             // We upload it to our own platform instead of using the URL from the platform because sometimes those URL expire when that user changes their profile picture
             // We *could* run a service which automatically checks for those, but that's more of a hassle than just uploading all the variants ourself.
-
             var variants = await _imageCdnService.UploadAsync(pfpUrl, JsonSerializer.Serialize(new { Source = nameof(VRAtlas), Context = "User", Identifier = id }));
             if (variants is null)
                 return null; // For simplicity throughout the entire stack, we will require profile pictures.

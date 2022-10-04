@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.32916.344
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VRAtlas", "VRAtlas\VRAtlas.csproj", "{89689ECD-47D5-4A14-8A14-9B6BB4485EB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VRAtlas", "VRAtlas\VRAtlas.csproj", "{89689ECD-47D5-4A14-8A14-9B6BB4485EB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VRAtlas.Tests", "VRAtlas.Tests\VRAtlas.Tests.csproj", "{7A9680A2-BF5E-42B8-A303-A9A303060998}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{89689ECD-47D5-4A14-8A14-9B6BB4485EB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89689ECD-47D5-4A14-8A14-9B6BB4485EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89689ECD-47D5-4A14-8A14-9B6BB4485EB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A9680A2-BF5E-42B8-A303-A9A303060998}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A9680A2-BF5E-42B8-A303-A9A303060998}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A9680A2-BF5E-42B8-A303-A9A303060998}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A9680A2-BF5E-42B8-A303-A9A303060998}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

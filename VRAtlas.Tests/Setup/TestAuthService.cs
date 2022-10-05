@@ -22,7 +22,15 @@ internal class TestAuthService : IAuthService
         if (id is null)
             return null;
 
-        var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Identifiers.DiscordId == id);
+        var user = await _atlasContext.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Identifiers.DiscordId == id);
+        
+        // If there are no roles, assign the default
+        if (user != null && !user.Roles.Any())
+        {
+            user.Roles.Add(await _atlasContext.Roles.FirstAsync(r => r.Name == AtlasConstants.DefaultRoleName));
+            await _atlasContext.SaveChangesAsync();
+        }
+
         return user;
     }
 }

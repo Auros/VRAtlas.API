@@ -82,8 +82,14 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         await using var scope = Services.CreateAsyncScope();
         var atlasContext = scope.ServiceProvider.GetRequiredService<AtlasContext>();
+
+        atlasContext.Roles.RemoveRange(atlasContext.Roles);
+        atlasContext.Roles.AddRange(TestExamples.Roles);
+
         atlasContext.Users.RemoveRange(atlasContext.Users);
         atlasContext.Users.AddRange(TestExamples.Users);
+
+
         await atlasContext.SaveChangesAsync();
     }
 }

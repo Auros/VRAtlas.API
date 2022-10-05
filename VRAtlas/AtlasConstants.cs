@@ -37,5 +37,15 @@ public static class AtlasConstants
     /// </summary>
     public const string UserEventDelete = "user.event.delete";
 
+    /// <summary>
+    /// Allows a user to edit any event.
+    /// </summary>
+    public const string ModerationEventEdit = "moderation.event.edit";
+
+    /// <summary>
+    /// Allows a user to delete any event.
+    /// </summary>
+    public const string ModerationEventDelete = "moderation.event.delete";
+
     #endregion
 }

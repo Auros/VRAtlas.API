@@ -21,8 +21,8 @@ public class PermissionTests : IClassFixture<AtlasFactory>
         var atlasContext = scope.ServiceProvider.GetRequiredService<AtlasContext>();
 
         var role = await atlasContext.Roles.FirstOrDefaultAsync(r => r.Name == AtlasConstants.DefaultRoleName);
-        role.Should().NotBeNull();
 
+        role.Should().NotBeNull();
         role!.Permissions.Should().NotBeEmpty();
         role.Permissions.Should().Contain("tests.default.example");
     }

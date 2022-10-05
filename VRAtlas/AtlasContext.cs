@@ -12,4 +12,9 @@ public class AtlasContext : DbContext
     {
 
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Role>().HasMany<User>().WithMany(u => u.Roles);
+    }
 }

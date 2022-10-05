@@ -2,7 +2,7 @@
 
 public class MissingPermissions
 {
-    public string Error { get; } = "Missing Permissions";
+    public string Error => "Missing Permissions";
 
     public IReadOnlyList<string> Permissions { get; }
 

@@ -47,5 +47,20 @@ public static class AtlasConstants
     /// </summary>
     public const string ModerationEventDelete = "moderation.event.delete";
 
+    /// <summary>
+    /// Allows a user to create a role.
+    /// </summary>
+    public const string AdministratorRoleCreate = "administrator.role.create";
+
+    /// <summary>
+    /// Allows a user to edit the permissions of a role.
+    /// </summary>
+    public const string AdministratorRoleEdit = "administrator.role.edit";
+
+    /// <summary>
+    /// Allows a user to delete a role.
+    /// </summary>
+    public const string AdministratorRoleDelete = "administrator.role.delete";
+
     #endregion
 }

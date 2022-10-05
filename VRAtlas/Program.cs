@@ -33,6 +33,7 @@ builder.Services
     .AddSingleton<IImageCdnService, CloudflareImageCdnService>()
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
+    .ConfigureRoleEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .AddSwaggerGen()
     .AddHttpClient()
@@ -57,7 +58,7 @@ builder.Services
     })
     .AddAuthorization(options =>
     {
-
+        options.AddPolicy("CreateRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleCreate)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

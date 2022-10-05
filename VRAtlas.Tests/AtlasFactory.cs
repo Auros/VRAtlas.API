@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
@@ -32,7 +32,7 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         _redisContainer = new TestcontainersBuilder<TestcontainersContainer>()
             .WithImage("redis:latest")
-            .WithName("redis")
+            .WithName($"redis-test-{string.Join(string.Empty, _redisPort.ToString().Select(r => ((int)r).ToString()))}")
             .WithEnvironment("REDIS_PASSWORD", nameof(VRAtlas))
             .WithPortBinding(_redisPort, 6379)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(6379))
@@ -41,22 +41,24 @@ public class AtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.ConfigureAppConfiguration(config =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:Database", _databaseContainer.ConnectionString },
+                { "ConnectionStrings:Redis", $"localhost:{_redisPort},password={nameof(VRAtlas)},allowAdmin=true" },
+                { "DefaultPermissions:0", "tests.default.example" },
+                { "DefaultPermissions:1", "user.event.create" },
+                { "DefaultPermissions:2", "user.event.edit" },
+                { "DefaultPermissions:3", "user.event.delete" },
+            });
+        });
+
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<AtlasContext>();
             services.RemoveAll<IAuthService>();
-            services.RemoveAll<IConnectionMultiplexer>();
             services.AddScoped<IAuthService, TestAuthService>();
-            services.AddDbContext<AtlasContext>(options =>
-            {
-                options.UseNpgsql(_databaseContainer.ConnectionString, npgsqlOptions =>
-                {
-                    npgsqlOptions.UseNodaTime();
-                });
-            });
-            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect($"localhost:{_redisPort},password={nameof(VRAtlas)},allowAdmin=true"));
-            services.AddAuthentication("Test")
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
+            services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
         });
     }
 

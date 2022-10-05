@@ -13,9 +13,7 @@ public static class UserEndpoints
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
-
         builder.MapGet("/user/{userId}", GetUserById);
-
         return builder;
     }
 

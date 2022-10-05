@@ -10,10 +10,8 @@ public static class AuthEndpoints
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder builder)
     {
-        builder.MapGet("/auth/discord", ChallengeDiscordLogin)
-            .Produces(StatusCodes.Status308PermanentRedirect);
-        builder.MapGet("/auth/claims", ViewUserClaims)
-            .Produces<IEnumerable<ViewableClaim>>();
+        builder.MapGet("/auth/discord", ChallengeDiscordLogin).Produces(StatusCodes.Status308PermanentRedirect);
+        builder.MapGet("/auth/claims", ViewUserClaims).Produces<IEnumerable<ViewableClaim>>();
         builder.MapGet("/auth/signout", SignOut);
         return builder;
     }

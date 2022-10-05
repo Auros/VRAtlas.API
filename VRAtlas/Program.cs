@@ -99,6 +99,7 @@ app.UseAuthorization();
 
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
+app.MapRoleEndpoints();
 
 // Seed the services with the necessary information required to run VR Atlas.
 await app.SeedAtlas();

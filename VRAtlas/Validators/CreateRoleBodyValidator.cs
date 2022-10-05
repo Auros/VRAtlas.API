@@ -12,9 +12,9 @@ public class CreateRoleBodyValidator : AbstractValidator<CreateRoleBody>
 	{
 		_atlasContext = atlasContext;
 
-		RuleFor(x => x.Name).NotEmpty().MinimumLength(1).MaximumLength(24).MustAsync(EnsureUniqueName);
+		RuleFor(x => x.Name).NotEmpty().MaximumLength(24).MustAsync(EnsureUniqueName);
 
-		RuleFor(x => x.Permissions).NotEmpty().ForEach(p => p.NotEmpty().MinimumLength(1).MaximumLength(256));
+		RuleFor(x => x.Permissions).ForEach(p => p.NotEmpty().MinimumLength(1).MaximumLength(256));
 	}
 
 	private async Task<bool> EnsureUniqueName(string name, CancellationToken cancellationToken)

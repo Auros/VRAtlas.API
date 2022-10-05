@@ -23,9 +23,9 @@ internal static class TestExamples
         Permissions = new()
         {
             "tests.default.example",
-            "user.event.create",
-            "user.event.edit",
-            "user.event.delete"
+            AtlasConstants.UserEventCreate,
+            AtlasConstants.UserEventEdit,
+            AtlasConstants.UserEventDelete,
         }
     };
 
@@ -54,8 +54,20 @@ internal static class TestExamples
         Permissions = new()
         {
             "tests.moderator.example",
-            "moderation.event.edit",
-            "moderation.event.delete"
+            AtlasConstants.ModerationEventEdit,
+            AtlasConstants.ModerationEventDelete
+        }
+    };
+
+    public static Role RoleManager = new()
+    {
+        Name = nameof(RoleManager),
+        Permissions = new()
+        {
+            "tests.rolemanager.example",
+            AtlasConstants.AdministratorRoleCreate,
+            AtlasConstants.AdministratorRoleEdit,
+            AtlasConstants.AdministratorRoleDelete,
         }
     };
 
@@ -65,6 +77,7 @@ internal static class TestExamples
         Administrator,
         Creator,
         Moderator,
+        RoleManager,
     };
 
     #endregion
@@ -113,10 +126,25 @@ internal static class TestExamples
         Identifiers = new PlatformIdentifiers { DiscordId = RandomNumberString(18) }
     };
 
+    /// <summary>
+    /// Represents a user that can manage roles site-wide.
+    /// </summary>
+    public static User Catharsis = new()
+    {
+        Id = Guid.NewGuid(),
+        Name = nameof(Catharsis),
+        Email = "catharsis@vratlas.tech",
+        Roles = new List<Role> { RoleManager, Default },
+        IconSourceUrl = ExampleImageUrl,
+        Icon = ExampleImageVariants,
+        Identifiers = new PlatformIdentifiers { DiscordId = RandomNumberString(18) }
+    };
+
     public static User[] Users = new User[]
     {
         Andromeda,
         Bismuth,
+        Catharsis,
     };
 
     public static User[] AllUsers = Users.Append(AndromedaAlternate).ToArray();

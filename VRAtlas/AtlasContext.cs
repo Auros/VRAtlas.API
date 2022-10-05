@@ -15,6 +15,7 @@ public class AtlasContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Setup user roles as a many-to-many relationship
         modelBuilder.Entity<Role>().HasMany<User>().WithMany(u => u.Roles);
     }
 }

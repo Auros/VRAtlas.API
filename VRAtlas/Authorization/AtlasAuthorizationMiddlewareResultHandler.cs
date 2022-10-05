@@ -26,6 +26,7 @@ public class AtlasAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewar
         if (missingPermissionReason is AtlasMissingPermissionsAuthorizationFailureReason missingPermissionFailureReason)
         {
             MissingPermissions permissions = new(missingPermissionFailureReason.MissingPermissions);
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(permissions);
         }
     }

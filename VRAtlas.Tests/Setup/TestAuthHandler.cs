@@ -28,9 +28,10 @@ internal class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
 
         var claims = new[]
         {
+            new Claim(AtlasConstants.IdentifierClaimType, user.Id.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Identifiers.DiscordId ?? string.Empty),
             new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-            new Claim(ClaimTypes.Name, user.Name)
+            new Claim(ClaimTypes.Name, user.Name),
         };
 
         var identity = new ClaimsIdentity(claims, "Test");

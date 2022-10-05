@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VRAtlas;
@@ -13,9 +14,11 @@ using VRAtlas.Models;
 namespace VRAtlas.Migrations
 {
     [DbContext(typeof(AtlasContext))]
-    partial class AtlasContextModelSnapshot : ModelSnapshot
+    [Migration("20221004160731_Roles")]
+    partial class Roles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,8 +40,6 @@ namespace VRAtlas.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Name");
-
-                    b.HasIndex("Name");
 
                     b.HasIndex("UserId");
 
@@ -70,8 +71,6 @@ namespace VRAtlas.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id");
 
                     b.ToTable("Users");
                 });

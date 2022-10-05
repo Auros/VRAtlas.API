@@ -31,7 +31,7 @@ public class AuthService : IAuthService
             return null; // In the future we'll move this to check to a separate method to check multiple platforms more seemlessly, but for now we only have one platform...
 
         string? pfpUrl = null;
-        var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Identifiers.DiscordId == id);
+        var user = await _atlasContext.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Identifiers.DiscordId == id);
         if (user is null)
         {
             // If the user is not in the database, we create them!
@@ -61,6 +61,14 @@ public class AuthService : IAuthService
 
         user.Name = principal.FindFirstValue(ClaimTypes.Name) ?? id;
         user.Email = principal.FindFirstValue(ClaimTypes.Email);
+
+        // If the user has no roles, add the default one.
+        // The default role should be guaranteed to exist from the setup process.
+        if (user.Roles.Count == 0)
+        {
+            var defaultRole = await _atlasContext.Roles.FirstAsync(r => r.Name == AtlasConstants.DefaultRoleName);
+            user.Roles.Add(defaultRole);   
+        }
 
         // Save any changes we might have made
         await _atlasContext.SaveChangesAsync();

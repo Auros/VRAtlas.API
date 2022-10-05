@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
 using VRAtlas;
+using VRAtlas.Authorization;
 using VRAtlas.Endpoints;
 using VRAtlas.Models.Options;
 using VRAtlas.Services;
 using VRAtlas.Services.Implementations;
+using SystemClock = NodaTime.SystemClock;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,15 +26,17 @@ Log.Logger = new LoggerConfiguration()
 var discord = builder.Configuration.GetRequiredSection("Auth:Providers:Discord");
 
 builder.Services
-    .AddSwaggerGen()
-    .AddHttpClient()
-    .AddAuthorization()
-    .AddEndpointsApiExplorer()
     .AddScoped<IAuthService, AuthService>()
+    .AddScoped<IUserPermissionService, CachedUserPermissionService>()
+    .AddScoped<IAuthorizationHandler, AtlasPermissionRequirementHandler>()
     .AddSingleton<IClock>(SystemClock.Instance)
     .AddSingleton<IImageCdnService, CloudflareImageCdnService>()
+    .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
+    .AddSwaggerGen()
+    .AddHttpClient()
+    .AddEndpointsApiExplorer()
     .AddLogging(options =>
     {
         options.ClearProviders();
@@ -50,6 +55,10 @@ builder.Services
             npgsqlOptions.UseNodaTime();
         });
     })
+    .AddAuthorization(options =>
+    {
+
+    })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -66,6 +75,9 @@ builder.Services
         options.Scope.Add("email");
         options.ClientId = discord.GetRequiredSection("ClientId").Value!;
         options.ClientSecret = discord.GetRequiredSection("ClientSecret").Value!;
+
+        // This event adds our custom claims to the user.
+        options.Events.AddAtlasClaimEvent();
     });
 
 // ------------------------
@@ -85,19 +97,11 @@ app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app
-    .MapAuthEndpoints()
-    .MapUserEndpoints();
+app.MapAuthEndpoints();
+app.MapUserEndpoints();
 
-/* Database Migration if necessary */
-var scope = app.Services.CreateAsyncScope();
-var migrationLogger = scope.ServiceProvider.GetRequiredService<ILogger<AtlasContext>>();
-var mercuryContext = scope.ServiceProvider.GetRequiredService<AtlasContext>();
-
-migrationLogger.LogInformation("Attempting to perform database migration");
-await mercuryContext.Database.MigrateAsync();
-migrationLogger.LogInformation("Disposing migration container");
-await scope.DisposeAsync();
+// Seed the services with the necessary information required to run VR Atlas.
+await app.SeedAtlas();
 
 app.Run();
 

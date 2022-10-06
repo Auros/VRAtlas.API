@@ -60,6 +60,11 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<Role>();
+        body.Should().NotBeNull();
+        body!.Name.Should().Be(payload.Name);
+        body.Permissions.Should().Contain(payload.Permissions);
     }
 
     [Fact]

@@ -67,11 +67,11 @@ public static class RoleEndpoints
     {
         // We don't allow the default role to be editable, as the backend will constantly be updating it with the default seeded permissions.
         if (body.Name.Equals(AtlasConstants.DefaultRoleName, StringComparison.OrdinalIgnoreCase))
-            return Results.BadRequest(new Error { ErrorName = $"The role {body.Name} cannot be modified through endpoints." });
+            return Results.BadRequest(new Error { ErrorName = $"The role '{body.Name}' cannot be modified through the API." });
 
         var role = await atlasContext.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == body.Name.ToLower());
         if (role is null)
-            return Results.BadRequest(new Error { ErrorName = $"Role '{body.Name}' does not exist." });
+            return Results.BadRequest(new Error { ErrorName = $"The role '{body.Name}' does not exist." });
 
         role.Permissions = body.Permissions;
         await atlasContext.SaveChangesAsync();
@@ -91,7 +91,7 @@ public static class RoleEndpoints
 
         var role = await atlasContext.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
         if (role is null)
-            return Results.BadRequest(new Error { ErrorName = $"Role '{name}' does not exist." });
+            return Results.BadRequest(new Error { ErrorName = $"The role '{name}' does not exist." });
 
         // Since this role was updated, we want to clear any caches that store user permissions.
         await foreach (var user in atlasContext.Users.Where(u => u.Roles.Contains(role)).AsAsyncEnumerable())

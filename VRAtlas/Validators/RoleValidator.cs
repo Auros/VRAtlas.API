@@ -1,14 +1,14 @@
 ﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using VRAtlas.Models.Bodies;
+using VRAtlas.Models;
 
 namespace VRAtlas.Validators;
 
-public class CreateRoleBodyValidator : AbstractValidator<CreateRoleBody>
+public class RoleValidator : AbstractValidator<Role>
 {
 	private readonly AtlasContext _atlasContext;
 
-	public CreateRoleBodyValidator(AtlasContext atlasContext)
+	public RoleValidator(AtlasContext atlasContext)
 	{
 		_atlasContext = atlasContext;
 

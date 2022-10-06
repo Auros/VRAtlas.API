@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using VRAtlas.Filters;
-using VRAtlas.Models.Bodies;
 
 namespace VRAtlas.Tests.Integration;
 
@@ -20,10 +19,10 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
     {
         using var atlas = _atlasFactory.CreateDefaultClient();
 
-        CreateRoleBody payload = new()
+        Role payload = new()
         {
             Name = "NewRole",
-            Permissions = new string[] { "some.new.permission" }
+            Permissions = new List<string> { "some.new.permission" }
         };
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);
@@ -36,10 +35,10 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
         using var atlas = _atlasFactory.CreateDefaultClient();
         atlas.AsTestUser(nameof(TestExamples.Andromeda));
 
-        CreateRoleBody payload = new()
+        Role payload = new()
         {
             Name = "NewRole",
-            Permissions = new string[] { "some.new.permission" }
+            Permissions = new List<string> { "some.new.permission" }
         };
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);
@@ -53,10 +52,10 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
         using var atlas = _atlasFactory.CreateDefaultClient();
         atlas.AsTestUser(nameof(TestExamples.Catharsis));
 
-        CreateRoleBody payload = new()
+        Role payload = new()
         {
             Name = "NewRole",
-            Permissions = new string[] { "some.new.permission" }
+            Permissions = new List<string> { "some.new.permission" }
         };
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);
@@ -69,10 +68,10 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
         using var atlas = _atlasFactory.CreateDefaultClient();
         atlas.AsTestUser(nameof(TestExamples.Catharsis));
 
-        CreateRoleBody payload = new()
+        Role payload = new()
         {
             Name = AtlasConstants.AdministratorRoleName,
-            Permissions = new string[] { "some.new.permission" }
+            Permissions = new List<string> { "some.new.permission" }
         };
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);
@@ -85,10 +84,10 @@ public class RoleCreationTests : IClassFixture<AtlasFactory>
         using var atlas = _atlasFactory.CreateDefaultClient();
         atlas.AsTestUser(nameof(TestExamples.Catharsis));
 
-        CreateRoleBody payload = new()
+        Role payload = new()
         {
             Name = string.Empty, // Empty string, can't be role name
-            Permissions = new string[] { Enumerable.Range(0, 257).Select(i => i.ToString()).Aggregate((a, b) => a + b) } // Super long permission name, not valid.
+            Permissions = new List<string> { Enumerable.Range(0, 257).Select(i => i.ToString()).Aggregate((a, b) => a + b) } // Super long permission name, not valid.
         };
 
         var response = await atlas.PostAsJsonAsync("/roles/create", payload);

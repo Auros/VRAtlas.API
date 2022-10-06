@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using VRAtlas.Filters;
 using VRAtlas.Models;
-using VRAtlas.Models.Bodies;
 using VRAtlas.Validators;
 
 namespace VRAtlas.Endpoints;
@@ -11,7 +10,7 @@ public static class RoleEndpoints
 {
     public static IServiceCollection ConfigureRoleEndpoints(this IServiceCollection services)
     {
-        services.AddScoped<IValidator<CreateRoleBody>, CreateRoleBodyValidator>();
+        services.AddScoped<IValidator<Role>, RoleValidator>();
         return services;
     }
 
@@ -24,7 +23,7 @@ public static class RoleEndpoints
                .Produces<Role>(StatusCodes.Status200OK)
                .Produces(StatusCodes.Status400BadRequest)
                .Produces(StatusCodes.Status401Unauthorized)
-               .AddEndpointFilter<ValidationFilter<CreateRoleBody>>()
+               .AddEndpointFilter<ValidationFilter<Role>>()
                .RequireAuthorization("CreateRole");
 
         return builder;
@@ -36,15 +35,9 @@ public static class RoleEndpoints
         return Results.Ok(roles);
     }
 
-    internal static async Task<IResult> CreateRole(CreateRoleBody body, ILogger<CreateRoleBody> logger, AtlasContext atlasContext)
+    internal static async Task<IResult> CreateRole(Role role, ILogger<Role> logger, AtlasContext atlasContext)
     {
-        logger.LogInformation("Creating a new role with the name {RoleName} with {RolePermissionCount} default permission(s)", body.Name, body.Permissions.Length);
-
-        Role role = new()
-        {
-            Name = body.Name,
-            Permissions = body.Permissions.ToList()
-        };
+        logger.LogInformation("Creating a new role with the name {RoleName} with {RolePermissionCount} default permission(s)", role.Name, role.Permissions.Count);
 
         atlasContext.Roles.Add(role);
         await atlasContext.SaveChangesAsync();

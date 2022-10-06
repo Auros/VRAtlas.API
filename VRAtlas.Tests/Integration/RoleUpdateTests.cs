@@ -45,7 +45,6 @@ public class RoleUpdateTests : IClassFixture<AtlasFactory>
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-
     [Fact]
     public async Task TestUpdateRole_UserHasPermissionsAndValidPayload()
     {

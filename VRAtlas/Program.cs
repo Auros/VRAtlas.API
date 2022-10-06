@@ -59,6 +59,7 @@ builder.Services
     .AddAuthorization(options =>
     {
         options.AddPolicy("CreateRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleCreate)));
+        options.AddPolicy("EditRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleEdit)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

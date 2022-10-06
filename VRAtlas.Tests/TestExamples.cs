@@ -71,6 +71,16 @@ internal static class TestExamples
         }
     };
 
+    public static Role DummyRole = new()
+    {
+        Name = nameof(DummyRole),
+        Permissions = new()
+        {
+            "tests.dummy.example",
+            AtlasConstants.UserEventEdit
+        }
+    };
+
     public static Role[] Roles = new Role[]
     {
         Default,
@@ -78,6 +88,7 @@ internal static class TestExamples
         Creator,
         Moderator,
         RoleManager,
+        DummyRole,
     };
 
     #endregion
@@ -140,11 +151,26 @@ internal static class TestExamples
         Identifiers = new PlatformIdentifiers { DiscordId = RandomNumberString(18) }
     };
 
+    /// <summary>
+    /// Represents a site moderator
+    /// </summary>
+    public static User Diso = new()
+    {
+        Id = Guid.NewGuid(),
+        Name = nameof(Diso),
+        Email = "diso@vratlas.tech",
+        Roles = new List<Role> { Moderator, Default },
+        IconSourceUrl = ExampleImageUrl,
+        Icon = ExampleImageVariants,
+        Identifiers = new PlatformIdentifiers { DiscordId = RandomNumberString(18) }
+    };
+
     public static User[] Users = new User[]
     {
         Andromeda,
         Bismuth,
         Catharsis,
+        Diso,
     };
 
     public static User[] AllUsers = Users.Append(AndromedaAlternate).ToArray();

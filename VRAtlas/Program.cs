@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
@@ -30,11 +31,12 @@ builder.Services
     .AddScoped<IUserPermissionService, CachedUserPermissionService>()
     .AddScoped<IAuthorizationHandler, AtlasPermissionRequirementHandler>()
     .AddSingleton<IClock>(SystemClock.Instance)
-    .AddSingleton<IImageCdnService, CloudflareImageCdnService>()
+    .AddSingleton<IAvatarCdnService, AzureAvatarCdnService>()
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .ConfigureRoleEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
+    .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
     .AddSwaggerGen()
     .AddHttpClient()
     .AddEndpointsApiExplorer()

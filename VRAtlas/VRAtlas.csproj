@@ -6,7 +6,8 @@
     <UserSecretsId>bdf2bdcf-4133-4e6e-92a4-0ea36c82b590</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AspNet.Security.OAuth.Discord" Version="6.0.11" />
+    <PackageReference Include="AspNet.Security.OAuth.Discord" Version="6.0.12" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.14.0" />
     <PackageReference Include="FluentValidation" Version="11.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.0-rc.1.22427.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.0-rc.1.22426.7">
@@ -18,7 +19,7 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.6.66" />
+    <PackageReference Include="StackExchange.Redis" Version="2.6.70" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 </Project>

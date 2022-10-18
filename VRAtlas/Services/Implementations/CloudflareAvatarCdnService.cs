@@ -5,13 +5,13 @@ using VRAtlas.Models;
 
 namespace VRAtlas.Services.Implementations;
 
-public class CloudflareImageCdnService : IImageCdnService
+public class CloudflareAvatarCdnService : IAvatarCdnService
 {
     private readonly ILogger _logger;
     private readonly HttpClient _httpClient;
     private readonly IOptions<CloudflareOptions> _cloudflareOptions;
     
-    public CloudflareImageCdnService(ILogger<CloudflareImageCdnService> logger, HttpClient httpClient, IOptions<CloudflareOptions> cloudflareOptions)
+    public CloudflareAvatarCdnService(ILogger<CloudflareAvatarCdnService> logger, HttpClient httpClient, IOptions<CloudflareOptions> cloudflareOptions)
     {
         _logger = logger;
         _httpClient = httpClient;
@@ -69,5 +69,10 @@ public class CloudflareImageCdnService : IImageCdnService
             Small = variants.FirstOrDefault(v => v.EndsWith(options.Variants.Small))!,
             Mini = variants.FirstOrDefault(v => v.EndsWith(options.Variants.Mini))!,
         };
+    }
+
+    public Task<ImageVariants?> UploadAsync(string fileName, Stream stream, string? metadata = null)
+    {
+        throw new NotImplementedException();
     }
 }

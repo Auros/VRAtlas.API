@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Azure;
 using NodaTime;
 using Serilog;
 using Serilog.Events;
@@ -35,6 +34,7 @@ builder.Services
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .ConfigureRoleEndpoints()
+    .ConfigureContextEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
     .AddSwaggerGen()
@@ -64,6 +64,7 @@ builder.Services
         options.AddPolicy("CreateRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleCreate)));
         options.AddPolicy("EditRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleEdit)));
         options.AddPolicy("DeleteRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleDelete)));
+        options.AddPolicy("ManageContexts", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.ManageContexts)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

@@ -32,5 +32,5 @@ public interface IVariantCdnService
     /// Gets a url to upload an image to.
     /// </summary>
     /// <returns></returns>
-    Task<string?> GetUploadUrl();
+    Task<string?> GetUploadUrl(string? uploaderId = null);
 }

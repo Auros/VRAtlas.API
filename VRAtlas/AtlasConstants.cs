@@ -67,5 +67,10 @@ public static class AtlasConstants
     /// </summary>
     public const string AdministratorRoleDelete = "administrator.role.delete";
 
+    /// <summary>
+    /// Allows a user to manage contexts.
+    /// </summary>
+    public const string ManageContexts = "contexts.manage";
+
     #endregion
 }

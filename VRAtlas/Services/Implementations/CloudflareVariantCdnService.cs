@@ -2,6 +2,7 @@
 using System.Text.Json;
 using VRAtlas.Models.Options;
 using VRAtlas.Models;
+using System;
 
 namespace VRAtlas.Services.Implementations;
 
@@ -18,16 +19,21 @@ public class CloudflareVariantCdnService : IVariantCdnService
         _cloudflareOptions = cloudflareOptions;
     }
 
-    public async Task<string?> GetUploadUrl()
+    public async Task<string?> GetUploadUrl(string? uploaderId = null)
     {
         var options = _cloudflareOptions.Value;
         var cloudflareUrl = new Uri($"https://api.cloudflare.com/client/v4/accounts/{options.AccountId}/images/v2/direct_upload");
 
         _logger.LogDebug("Creating upload request body");
+        MultipartFormDataContent content = new();
+        if (uploaderId is not null)
+            content.Add(new StringContent("{\"uploaderId\":\"" + uploaderId + "\"}"), "\"metadata\"");
+
         HttpRequestMessage msg = new()
         {
             RequestUri = cloudflareUrl,
-            Method = HttpMethod.Post
+            Method = HttpMethod.Post,
+            Content = content,
         };
         msg.Headers.Add("Authorization", $"Bearer {options.ApiKey}");
 
@@ -123,13 +129,16 @@ public class CloudflareVariantCdnService : IVariantCdnService
 
         if (uploaderId is not null)
         {
-            var trueUploaderPresent = doc.RootElement
+            var hasMeta = doc.RootElement
                 .GetProperty("result")
-                .GetProperty("meta")
-                .TryGetProperty("uploaderId", out var uploaderIdProperty)
+                .TryGetProperty("meta", out var meta)
             ;
 
-            if (trueUploaderPresent || uploaderIdProperty!.GetString() != uploaderId)
+            if (!hasMeta)
+                return null;
+
+            var trueUploaderPresent = meta.TryGetProperty("uploaderId", out var uploaderIdProperty);
+            if (!trueUploaderPresent || uploaderIdProperty!.GetString() != uploaderId)
                 return null;
         }
 

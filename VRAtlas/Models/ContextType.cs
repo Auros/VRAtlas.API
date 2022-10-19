@@ -3,5 +3,6 @@
 public enum ContextType
 {
     Unknown,
-    Game
+    Game,
+    Stream
 }

@@ -75,7 +75,7 @@ public abstract class AzureVariantCdnService : IVariantCdnService
         throw new NotImplementedException();
     }
 
-    public Task<string?> GetUploadUrl()
+    public Task<string?> GetUploadUrl(string? uploaderId = null)
     {
         throw new NotImplementedException();
     }

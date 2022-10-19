@@ -3,7 +3,7 @@ using VRAtlas.Models.Options;
 
 namespace VRAtlas.Services.Implementations;
 
-public class AzureAvatarCdnService : AzureVariantCdnService, IAvatarCdnService
+public class AzureAvatarCdnService : AzureVariantCdnService, IVariantCdnService
 {
     public AzureAvatarCdnService(ILogger<AzureAvatarCdnService> logger, HttpClient httpClient, IConfiguration configuration, IOptions<AzureOptions> azureOptions) : base(logger, httpClient, configuration, azureOptions)
     {

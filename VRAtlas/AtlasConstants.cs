@@ -23,6 +23,11 @@ public static class AtlasConstants
     public const string SpecialAdministrator = "special.administrator";
 
     /// <summary>
+    /// Allows a user to receive a cdn upload url.
+    /// </summary>
+    public const string UserUploadUrl = "user.upload.url";
+
+    /// <summary>
     /// Allows a user to create an event.
     /// </summary>
     public const string UserEventCreate = "user.event.create";

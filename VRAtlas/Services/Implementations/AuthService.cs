@@ -10,9 +10,9 @@ public class AuthService : IAuthService
     private const string _discordCdnUrl = "https://cdn.discordapp.com";
 
     private readonly AtlasContext _atlasContext;
-    private readonly IAvatarCdnService _imageCdnService;
+    private readonly IVariantCdnService _imageCdnService;
 
-    public AuthService(AtlasContext atlasContext, IAvatarCdnService imageCdnService)
+    public AuthService(AtlasContext atlasContext, IVariantCdnService imageCdnService)
     {
         _atlasContext = atlasContext;
         _imageCdnService = imageCdnService;

@@ -69,4 +69,14 @@ public abstract class AzureVariantCdnService : IVariantCdnService
     {
         return $"https://{endpoint}.azureedge.net/{container}/{fileName}_{variant}{fileExtension}";
     }
+
+    public Task<ImageVariants?> ValidateAsync(string uploadId, string? uploaderId = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string?> GetUploadUrl()
+    {
+        throw new NotImplementedException();
+    }
 }

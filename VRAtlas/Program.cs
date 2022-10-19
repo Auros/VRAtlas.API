@@ -31,7 +31,7 @@ builder.Services
     .AddScoped<IUserPermissionService, CachedUserPermissionService>()
     .AddScoped<IAuthorizationHandler, AtlasPermissionRequirementHandler>()
     .AddSingleton<IClock>(SystemClock.Instance)
-    .AddSingleton<IAvatarCdnService, AzureAvatarCdnService>()
+    .AddSingleton<IVariantCdnService, CloudflareVariantCdnService>()
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .ConfigureRoleEndpoints()
@@ -60,6 +60,7 @@ builder.Services
     })
     .AddAuthorization(options =>
     {
+        options.AddPolicy("UploadUrl", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.UserUploadUrl)));
         options.AddPolicy("CreateRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleCreate)));
         options.AddPolicy("EditRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleEdit)));
         options.AddPolicy("DeleteRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleDelete)));
@@ -106,6 +107,7 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapRoleEndpoints();
 app.MapContextEndpoints();
+app.MapUploadEndpoints();
 
 // Seed the services with the necessary information required to run VR Atlas.
 await app.SeedAtlas();

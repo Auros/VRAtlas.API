@@ -15,6 +15,7 @@ public static class ContextEndpoints
     public static IServiceCollection ConfigureContextEndpoints(this IServiceCollection services)
     {
         services.AddSingleton<IValidator<CreateContextBody>, CreateContextBodyValidator>();
+        services.AddSingleton<IValidator<UpdateContextBody>, UpdateContextBodyValidator>();
         return services;
     }
 
@@ -28,6 +29,15 @@ public static class ContextEndpoints
                .Produces(StatusCodes.Status401Unauthorized)
                .Produces(StatusCodes.Status403Forbidden)
                .AddEndpointFilter<ValidationFilter<CreateContextBody>>()
+               .RequireAuthorization("ManageContexts");
+
+        builder.MapPost("/contexts/update", UpdateContext)
+               .Produces<Context>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status401Unauthorized)
+               .Produces(StatusCodes.Status403Forbidden)
+               .AddEndpointFilter<ValidationFilter<UpdateContextBody>>()
                .RequireAuthorization("ManageContexts");
 
         return builder;
@@ -57,6 +67,21 @@ public static class ContextEndpoints
         };
 
         atlasContext.Contexts.Add(context);
+        await atlasContext.SaveChangesAsync();
+
+        return Results.Ok(context);
+    }
+
+    internal static async Task<IResult> UpdateContext([FromBody] UpdateContextBody body, AtlasContext atlasContext)
+    {
+        var context = await atlasContext.Contexts.FirstOrDefaultAsync(c => c.Id == body.Id);
+        if (context is null)
+            return Results.NotFound();
+
+        context.Name = body.Name;
+        context.Type = body.Type;
+        context.Description = body.Description;
+    
         await atlasContext.SaveChangesAsync();
 
         return Results.Ok(context);

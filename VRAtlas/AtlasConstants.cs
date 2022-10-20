@@ -78,9 +78,9 @@ public static class AtlasConstants
     public const string CreateGroups = "groups.create";
 
     /// <summary>
-    /// Allows a user to update a group.
+    /// Allows a user to edit a group.
     /// </summary>
-    public const string UpdateGroups = "groups.update";
+    public const string EditGroups = "groups.edit";
 
     #endregion
 }

@@ -42,7 +42,7 @@ public static class GroupEndpoints
                .Produces(StatusCodes.Status401Unauthorized)
                .Produces(StatusCodes.Status403Forbidden)
                .Produces(StatusCodes.Status404NotFound)
-               .RequireAuthorization("UpdateGroup");
+               .RequireAuthorization("EditGroup");
 
         return builder;
     }

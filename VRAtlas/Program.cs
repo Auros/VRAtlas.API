@@ -1,7 +1,10 @@
+using MicroElements.Swashbuckle.NodaTime;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using NodaTime.Serialization.SystemTextJson;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
@@ -36,9 +39,17 @@ builder.Services
     .ConfigureRoleEndpoints()
     .ConfigureContextEndpoints()
     .ConfigureGroupEndpoints()
+    .ConfigureEventEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
-    .AddSwaggerGen()
+    .Configure<JsonOptions>(options =>
+    {
+        options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+    })
+    .AddSwaggerGen(options =>
+    {
+        options.ConfigureForNodaTimeWithSystemTextJson();
+    })
     .AddHttpClient()
     .AddEndpointsApiExplorer()
     .AddLogging(options =>
@@ -67,7 +78,8 @@ builder.Services
         options.AddPolicy("DeleteRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleDelete)));
         options.AddPolicy("ManageContexts", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.ManageContexts)));
         options.AddPolicy("CreateGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.CreateGroups)));
-        options.AddPolicy("UpdateGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.UpdateGroups)));
+        options.AddPolicy("EditGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.EditGroups)));
+        options.AddPolicy("CreateEvent", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.UserEventCreate)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -113,6 +125,7 @@ app.MapRoleEndpoints();
 app.MapContextEndpoints();
 app.MapUploadEndpoints();
 app.MapGroupEndpoints();
+app.MapEventEndpoints();
 
 // Seed the services with the necessary information required to run VR Atlas.
 await app.SeedAtlas();

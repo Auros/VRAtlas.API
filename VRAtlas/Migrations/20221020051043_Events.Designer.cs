@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NodaTime;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -14,9 +15,11 @@ using VRAtlas.Models;
 namespace VRAtlas.Migrations
 {
     [DbContext(typeof(AtlasContext))]
-    partial class AtlasContextModelSnapshot : ModelSnapshot
+    [Migration("20221020051043_Events")]
+    partial class Events
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,7 +43,7 @@ namespace VRAtlas.Migrations
                     b.ToTable("ContextEvent");
                 });
 
-            modelBuilder.Entity("EventEventStar", b =>
+            modelBuilder.Entity("EventUser", b =>
                 {
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
@@ -52,7 +55,7 @@ namespace VRAtlas.Migrations
 
                     b.HasIndex("StarsId");
 
-                    b.ToTable("EventEventStar");
+                    b.ToTable("EventUser");
                 });
 
             modelBuilder.Entity("RoleUser", b =>
@@ -106,10 +109,6 @@ namespace VRAtlas.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Instant>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -135,30 +134,9 @@ namespace VRAtlas.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Id");
-
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Events");
-                });
-
-            modelBuilder.Entity("VRAtlas.Models.EventStar", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("EventStar");
                 });
 
             modelBuilder.Entity("VRAtlas.Models.Group", b =>
@@ -274,7 +252,7 @@ namespace VRAtlas.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("EventEventStar", b =>
+            modelBuilder.Entity("EventUser", b =>
                 {
                     b.HasOne("VRAtlas.Models.Event", null)
                         .WithMany()
@@ -282,7 +260,7 @@ namespace VRAtlas.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("VRAtlas.Models.EventStar", null)
+                    b.HasOne("VRAtlas.Models.User", null)
                         .WithMany()
                         .HasForeignKey("StarsId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -313,17 +291,6 @@ namespace VRAtlas.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("VRAtlas.Models.EventStar", b =>
-                {
-                    b.HasOne("VRAtlas.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("VRAtlas.Models.GroupUser", b =>

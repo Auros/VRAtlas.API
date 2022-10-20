@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using VRAtlas.Filters;
+using VRAtlas.Migrations;
 using VRAtlas.Models;
 using VRAtlas.Models.Bodies;
 using VRAtlas.Services;
@@ -36,7 +37,11 @@ public static class EventEndpoints
                .Produces(StatusCodes.Status404NotFound);
 
         builder.MapGet("/events", GetPaginatedEvents)
-               .Produces<IEnumerable<Event>>(StatusCodes.Status200OK);
+               .Produces<IEnumerable<EventPage>>(StatusCodes.Status200OK);
+
+        builder.MapGet("/events/from-group/{groupId}", GetEventsFromGroup)
+               .Produces<IEnumerable<EventPage>>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status404NotFound);
 
         builder.MapPost("/events/create", CreateEvent)
                .Produces<Event>(StatusCodes.Status200OK)
@@ -73,6 +78,7 @@ public static class EventEndpoints
 
         search = search.ToLower();
         var eventsQuery = atlasContext.Events
+            .AsNoTracking()
             .Where(e => search == string.Empty || e.Name.ToLower().Contains(search) || (e.Description != string.Empty && e.Description.ToLower().Contains(search)))
             .Where(e => e.Stage != StageType.Unlisted);
 
@@ -103,6 +109,50 @@ public static class EventEndpoints
             .ToArrayAsync();
 
         var eventCount = await atlasContext.Events.CountAsync();
+
+        // Divide the number of events stored by the size of each page, then get the ceiling to ensure any extra elements get their own page.
+        var pageCount = (int)Math.Ceiling(eventCount * 1f / pageSize);
+
+        // Ensure that we have at least one page, even if there's no elements.
+        if (pageCount == 0)
+            pageCount = 1;
+
+        Page pageInfo = new(page, pageCount);
+        EventPage eventPage = new(events, pageInfo);
+        return Results.Ok(eventPage);
+    }
+
+    private static async Task<IResult> GetEventsFromGroup(Guid groupId, ClaimsPrincipal principal, AtlasContext atlasContext, int page = 0)
+    {
+        const int pageSize = 10;
+
+        // If the page number is less than 0, reset it to zero.
+        if (0 > page)
+            page = 0;
+
+        var authed = Guid.TryParse(principal.FindFirstValue(AtlasConstants.IdentifierClaimType), out var userId);
+
+        var groupQuery = atlasContext.Groups.AsNoTracking();
+        if (authed)
+            groupQuery = groupQuery.Include(g => g.Users).ThenInclude(g => g.User);
+
+        var group = await groupQuery.FirstOrDefaultAsync(g => g.Id == groupId);
+
+        if (group is null)
+            return Results.NotFound();
+
+        var eventsQuery = atlasContext.Events.AsNoTracking().Where(e => e.Owner == group);
+        if (!authed || !group.Users.Any(u => u.User.Id == userId))
+            eventsQuery = eventsQuery.Where(e => e.Stage != StageType.Unlisted);
+
+        var events = await eventsQuery
+            .Include(e => e.Contexts)
+            .Include(e => e.Owner)
+            .Skip(pageSize * page)
+            .Take(pageSize)
+            .ToArrayAsync();
+
+        var eventCount = await atlasContext.Events.Where(e => e.Owner == group).CountAsync();
 
         // Divide the number of events stored by the size of each page, then get the ceiling to ensure any extra elements get their own page.
         var pageCount = (int)Math.Ceiling(eventCount * 1f / pageSize);

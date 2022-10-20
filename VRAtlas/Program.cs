@@ -67,6 +67,7 @@ builder.Services
         options.AddPolicy("DeleteRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleDelete)));
         options.AddPolicy("ManageContexts", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.ManageContexts)));
         options.AddPolicy("CreateGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.CreateGroups)));
+        options.AddPolicy("UpdateGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.UpdateGroups)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

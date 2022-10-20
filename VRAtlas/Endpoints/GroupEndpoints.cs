@@ -16,6 +16,7 @@ public static class GroupEndpoints
     public static IServiceCollection ConfigureGroupEndpoints(this IServiceCollection services)
     {
         services.AddSingleton<IValidator<CreateGroupBody>, CreateGroupBodyValidator>();
+        services.AddSingleton<IValidator<UpdateGroupBody>, UpdateGroupBodyValidator>();
         return services;
     }
 
@@ -34,6 +35,14 @@ public static class GroupEndpoints
                .Produces(StatusCodes.Status401Unauthorized)
                .Produces(StatusCodes.Status403Forbidden)
                .RequireAuthorization("CreateGroup");
+
+        builder.MapPost("/groups/update", UpdateGroup)
+               .Produces<Group>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status401Unauthorized)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces(StatusCodes.Status404NotFound)
+               .RequireAuthorization("UpdateGroup");
 
         return builder;
     }
@@ -114,6 +123,53 @@ public static class GroupEndpoints
         };
 
         atlasContext.Groups.Add(group);
+        await atlasContext.SaveChangesAsync();
+        return Results.Ok(group);
+    }
+
+    internal static async Task<IResult> UpdateGroup([FromBody] UpdateGroupBody body, ClaimsPrincipal principal, AtlasContext atlasContext, IVariantCdnService variantCdnService)
+    {
+        var group = await atlasContext.Groups
+            .Include(g => g.Users)
+            .ThenInclude(gu => gu.User)
+            .ThenInclude(gu => gu.Roles)
+            .FirstOrDefaultAsync(g => g.Id == body.Id);
+
+        if (group is null)
+            return Results.NotFound();
+
+        // If the name has been changed, check to see if it's not in use.
+        if (!body.Name.Equals(group.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var nameInUse = await atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == body.Name.ToLower());
+            if (nameInUse)
+                return Results.BadRequest(new Error { ErrorName = "Name is already in use." });
+        }
+
+        body.Name = body.Name;
+        body.Description = body.Description;
+
+        if (body.IconImageId is not null || body.BannerImageId is not null)
+        {
+            var uploaderId = principal.FindFirstValue(AtlasConstants.IdentifierClaimType);
+
+            if (body.IconImageId is not null)
+            {
+                var icon = await variantCdnService.ValidateAsync(body.IconImageId, uploaderId);
+                if (icon is null)
+                    return Results.BadRequest(new Error { ErrorName = "Invalid Icon Id" });
+                group.Icon = icon;
+            }
+            
+            if (body.BannerImageId is not null)
+            {
+                var banner = await variantCdnService.ValidateAsync(body.BannerImageId, uploaderId);
+                if (banner is null)
+                    return Results.BadRequest(new Error { ErrorName = "Invalid Banner Id" });
+                group.Banner = banner;
+            }
+        }
+
         await atlasContext.SaveChangesAsync();
         return Results.Ok(group);
     }

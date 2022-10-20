@@ -1,8 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NodaTime;
-using System.Linq.Expressions;
 using System.Security.Claims;
 using VRAtlas.Filters;
 using VRAtlas.Models;
@@ -16,14 +14,13 @@ public static class EventEndpoints
 {
     public record EventPage(Event[] Events, Page Page);
 
-    [Flags]
     public enum EventStatusCategory
     {
-        All = 0,
-        Upcoming = 1,
-        Current = 2,
-        Concluded = 4,
-        Canceled = 8
+        All,
+        Upcoming,
+        Current,
+        Concluded,
+        Canceled
     }
 
     public static IServiceCollection ConfigureEventEndpoints(this IServiceCollection services)
@@ -81,14 +78,21 @@ public static class EventEndpoints
 
         if (category is not EventStatusCategory.All)
         {
-            if (category.HasFlag(EventStatusCategory.Upcoming))
-                eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Announced || e.Stage == StageType.Unlisted);
-            if (category.HasFlag(EventStatusCategory.Current))
-                eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Started);
-            if (category.HasFlag(EventStatusCategory.Concluded))
-                eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Concluded);
-            if (category.HasFlag(EventStatusCategory.Canceled))
-                eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Canceled);
+            switch (category)
+            {
+                case EventStatusCategory.Upcoming:
+                    eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Announced || e.Stage == StageType.Unlisted);
+                    break;
+                case EventStatusCategory.Current:
+                    eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Started);
+                    break;
+                case EventStatusCategory.Concluded:
+                    eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Concluded);
+                    break;
+                case EventStatusCategory.Canceled:
+                    eventsQuery = eventsQuery.Where(e => e.Stage == StageType.Canceled);
+                    break;
+            }
         }
 
         var events = await eventsQuery

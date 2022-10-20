@@ -72,5 +72,10 @@ public static class AtlasConstants
     /// </summary>
     public const string ManageContexts = "contexts.manage";
 
+    /// <summary>
+    /// Allows a user to create a group.
+    /// </summary>
+    public const string CreateGroups = "groups.create";
+
     #endregion
 }

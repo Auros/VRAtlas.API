@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
@@ -10,7 +11,8 @@ public class Group
 
     public string Description { get; set; } = string.Empty;
 
-    public List<GroupUser> Users { get; set; } = new();
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<GroupUser> Users { get; set; } = null!;
 
     [Column(TypeName = "jsonb")]
     public ImageVariants Icon { get; set; } = null!;

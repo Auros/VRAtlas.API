@@ -7,6 +7,7 @@ public class AtlasContext : DbContext
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Group> Groups => Set<Group>();
     public DbSet<Context> Contexts => Set<Context>();
 
     public AtlasContext(DbContextOptions options) : base(options)

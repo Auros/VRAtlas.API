@@ -21,7 +21,9 @@ public static class ContextEndpoints
 
     public static IEndpointRouteBuilder MapContextEndpoints(this IEndpointRouteBuilder builder)
     {
-        builder.MapGet("/contexts", GetAllContexts).Produces<IEnumerable<Context>>(StatusCodes.Status200OK);
+        builder.MapGet("/contexts", GetAllContexts)
+               .Produces<IEnumerable<Context>>(StatusCodes.Status200OK);
+
         builder.MapPost("/contexts/create", CreateContext)
                .Produces<Context>(StatusCodes.Status200OK)
                .Produces(StatusCodes.Status400BadRequest)

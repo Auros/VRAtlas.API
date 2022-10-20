@@ -35,6 +35,7 @@ builder.Services
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
     .ConfigureRoleEndpoints()
     .ConfigureContextEndpoints()
+    .ConfigureGroupEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
     .AddSwaggerGen()
@@ -65,6 +66,7 @@ builder.Services
         options.AddPolicy("EditRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleEdit)));
         options.AddPolicy("DeleteRole", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.AdministratorRoleDelete)));
         options.AddPolicy("ManageContexts", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.ManageContexts)));
+        options.AddPolicy("CreateGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.CreateGroups)));
     })
     .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -109,6 +111,7 @@ app.MapUserEndpoints();
 app.MapRoleEndpoints();
 app.MapContextEndpoints();
 app.MapUploadEndpoints();
+app.MapGroupEndpoints();
 
 // Seed the services with the necessary information required to run VR Atlas.
 await app.SeedAtlas();

@@ -21,6 +21,10 @@ public static class GroupEndpoints
 
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder builder)
     {
+        builder.MapGet("/groups/by-id/{groupId}", GetGroupById)
+               .Produces<Group>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status404NotFound);
+
         builder.MapGet("/groups", GetPaginatedGroups)
                .Produces<IEnumerable<Group>>(StatusCodes.Status200OK);
 
@@ -29,10 +33,18 @@ public static class GroupEndpoints
                .Produces(StatusCodes.Status400BadRequest)
                .Produces(StatusCodes.Status401Unauthorized)
                .Produces(StatusCodes.Status403Forbidden)
-               .RequireAuthorization("CreateGroup")
-               ;
+               .RequireAuthorization("CreateGroup");
 
         return builder;
+    }
+
+    internal static async Task<IResult> GetGroupById(Guid groupId, AtlasContext atlasContext)
+    {
+        var group = await atlasContext.Groups.Include(g => g.Users).ThenInclude(gu => gu.User).ThenInclude(gu => gu.Roles).FirstOrDefaultAsync(g => g.Id == groupId);
+        if (group is null)
+            return Results.NotFound();
+
+        return Results.Ok(group);
     }
 
     internal static async Task<IResult> GetPaginatedGroups(AtlasContext atlasContext, int page = 0, string search = "")

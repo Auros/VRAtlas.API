@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using VRAtlas.Filters;
-using VRAtlas.Migrations;
 using VRAtlas.Models;
 using VRAtlas.Models.Bodies;
 using VRAtlas.Services;

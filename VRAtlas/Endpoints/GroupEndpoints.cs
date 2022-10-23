@@ -22,12 +22,12 @@ public static class GroupEndpoints
 
     public static IEndpointRouteBuilder MapGroupEndpoints(this IEndpointRouteBuilder builder)
     {
+        builder.MapGet("/groups", GetPaginatedGroups)
+               .Produces<IEnumerable<Group>>(StatusCodes.Status200OK);
+
         builder.MapGet("/groups/by-id/{groupId}", GetGroupById)
                .Produces<Group>(StatusCodes.Status200OK)
                .Produces(StatusCodes.Status404NotFound);
-
-        builder.MapGet("/groups", GetPaginatedGroups)
-               .Produces<IEnumerable<Group>>(StatusCodes.Status200OK);
 
         builder.MapPost("/groups/create", CreateGroup)
                .Produces<Group>(StatusCodes.Status200OK)

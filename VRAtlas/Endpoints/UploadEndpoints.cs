@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using VRAtlas.Models;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -11,10 +10,10 @@ public static class UploadEndpoints
     public static IEndpointRouteBuilder MapUploadEndpoints(this IEndpointRouteBuilder builder)
     {
         builder.MapGet("/upload/url", GetUploadUrl)
-            .Produces<UploadUrlBody>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden)
-            .RequireAuthorization("UploadUrl");
+               .Produces<UploadUrlBody>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status401Unauthorized)
+               .Produces(StatusCodes.Status403Forbidden)
+               .RequireAuthorization("UploadUrl");
 
         return builder;
     }

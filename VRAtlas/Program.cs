@@ -42,14 +42,8 @@ builder.Services
     .ConfigureEventEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
-    .Configure<JsonOptions>(options =>
-    {
-        options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-    })
-    .AddSwaggerGen(options =>
-    {
-        options.ConfigureForNodaTimeWithSystemTextJson();
-    })
+    .Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
+    .AddSwaggerGen(options => options.ConfigureForNodaTimeWithSystemTextJson())
     .AddHttpClient()
     .AddEndpointsApiExplorer()
     .AddLogging(options =>
@@ -57,18 +51,12 @@ builder.Services
         options.ClearProviders();
         options.AddSerilog(Log.Logger);
     })
-    .AddOutputCache(options =>
-    {
-        options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1);
-    })
+    .AddOutputCache(options => options.DefaultExpirationTimeSpan = TimeSpan.FromDays(1))
     .AddDbContext<AtlasContext>(options =>
     {
         // If there is no connection string, we use an empty string to let UseNpgsql handle throwing the exception. 
         var connString = builder.Configuration.GetConnectionString("Database") ?? string.Empty;
-        options.UseNpgsql(connString, npgsqlOptions =>
-        {
-            npgsqlOptions.UseNodaTime();
-        });
+        options.UseNpgsql(connString, npgsqlOptions => npgsqlOptions.UseNodaTime());
     })
     .AddAuthorization(options =>
     {

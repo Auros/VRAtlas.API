@@ -10,10 +10,11 @@ public static class UserEndpoints
     public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder builder)
     {
         builder.MapGet("/users/@me", GetLoggedInUser)
-            .Produces<User>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .RequireAuthorization();
-        builder.MapGet("/user/{userId}", GetUserById);
+               .Produces<User>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status401Unauthorized)
+               .RequireAuthorization();
+
+        builder.MapGet("/users/{userId}", GetUserById);
         return builder;
     }
 

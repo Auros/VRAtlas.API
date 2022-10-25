@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
+using System.IdentityModel.Tokens.Jwt;
 using VRAtlas;
 using VRAtlas.Authorization;
 using VRAtlas.Endpoints;
@@ -27,12 +29,14 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var discord = builder.Configuration.GetRequiredSection("Auth:Providers:Discord");
+var jwt = builder.Configuration.GetRequiredSection("Jwt").Get<JwtOptions>()!;
 
 builder.Services
     .AddScoped<IAuthService, AuthService>()
     .AddScoped<IUserPermissionService, CachedUserPermissionService>()
     .AddScoped<IAuthorizationHandler, AtlasPermissionRequirementHandler>()
     .AddSingleton<IClock>(SystemClock.Instance)
+    .AddSingleton<JwtSecurityTokenHandler>()
     .AddSingleton<IVariantCdnService, CloudflareVariantCdnService>()
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
@@ -42,6 +46,7 @@ builder.Services
     .ConfigureEventEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
+    .Configure<JwtOptions>(builder.Configuration.GetRequiredSection("Jwt"))
     .Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
     .AddSwaggerGen(options => options.ConfigureForNodaTimeWithSystemTextJson())
     .AddHttpClient()
@@ -80,6 +85,7 @@ builder.Services
             return Task.CompletedTask;
         };
     })
+    .AddJwtBearer(jwt.Issuer, jwt.Audience, jwt.Key)
     .AddDiscord(options =>
     {
         options.Scope.Add("email");

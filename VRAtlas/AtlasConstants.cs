@@ -10,6 +10,8 @@ public static class AtlasConstants
 
     public const int MainDatabase = 0;
 
+    public const string DiscordApiUrl = "https://discord.com/api/v10";
+
     /// <summary>
     /// The Id for the Redis database which stores cached user permission data
     /// </summary>

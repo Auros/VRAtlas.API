@@ -1,5 +1,6 @@
 using MicroElements.Swashbuckle.NodaTime;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ builder.Services
     .AddScoped<IAuthorizationHandler, AtlasPermissionRequirementHandler>()
     .AddSingleton<IClock>(SystemClock.Instance)
     .AddSingleton<JwtSecurityTokenHandler>()
+    .AddSingleton<IDiscordService, DiscordService>()
     .AddSingleton<IVariantCdnService, CloudflareVariantCdnService>()
     .AddSingleton<IAuthorizationMiddlewareResultHandler, AtlasAuthorizationMiddlewareResultHandler>()
     .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty))
@@ -45,12 +47,16 @@ builder.Services
     .ConfigureGroupEndpoints()
     .ConfigureEventEndpoints()
     .Configure<CloudflareOptions>(builder.Configuration.GetRequiredSection("Cloudflare"))
+    .Configure<DiscordOptions>(builder.Configuration.GetRequiredSection("Discord"))
     .Configure<AzureOptions>(builder.Configuration.GetRequiredSection("Azure"))
     .Configure<JwtOptions>(builder.Configuration.GetRequiredSection("Jwt"))
     .Configure<JsonOptions>(options => options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
     .AddSwaggerGen(options => options.ConfigureForNodaTimeWithSystemTextJson())
     .AddHttpClient()
     .AddEndpointsApiExplorer()
+    .AddCors(options => options.AddPolicy("_allowVRAOrigins", policy => policy
+        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()
+        .WithOrigins(builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? Array.Empty<string>())))
     .AddLogging(options =>
     {
         options.ClearProviders();
@@ -74,27 +80,8 @@ builder.Services
         options.AddPolicy("EditGroup", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.EditGroups)));
         options.AddPolicy("CreateEvent", o => o.AddRequirements(new AtlasPermissionRequirement(AtlasConstants.UserEventCreate)));
     })
-    .AddAuthentication(options => options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        // Disables login redirect on API endpoints
-        options.Events.OnRedirectToLogin = ctx =>
-        {
-            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            ctx.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
-            return Task.CompletedTask;
-        };
-    })
-    .AddJwtBearer(jwt.Issuer, jwt.Audience, jwt.Key)
-    .AddDiscord(options =>
-    {
-        options.Scope.Add("email");
-        options.ClientId = discord.GetRequiredSection("ClientId").Value!;
-        options.ClientSecret = discord.GetRequiredSection("ClientSecret").Value!;
-
-        // This event adds our custom claims to the user.
-        options.Events.AddAtlasClaimEvent();
-    });
+    .AddAuthentication(options => options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(jwt.Issuer, jwt.Audience, jwt.Key);
 
 // ------------------------
 // Middleware configuration
@@ -110,6 +97,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseOutputCache();
+app.UseCors("_allowVRAOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using VRAtlas.Models.Options;
-using static AspNet.Security.OAuth.Discord.DiscordAuthenticationConstants;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using VRAtlas.Models.Bodies;
+using VRAtlas.Services;
+using VRAtlas.Models;
 
 namespace VRAtlas.Endpoints;
 
@@ -24,24 +24,18 @@ public static class AuthEndpoints
         builder.MapGet("/auth/claims", ViewUserClaims)
                .Produces<IEnumerable<ViewableClaim>>();
 
-        builder.MapGet("/auth/signout", SignOut);
-
         builder.MapPost("/auth/token", GenerateToken)
                .Produces(StatusCodes.Status200OK)
-               .Produces(StatusCodes.Status401Unauthorized)
-               .RequireAuthorization();
+               .Produces(StatusCodes.Status400BadRequest);
 
         return builder;
     }
 
-    internal static async Task<IResult> ChallengeDiscordLogin(IAuthenticationSchemeProvider provider)
+    internal static IResult ChallengeDiscordLogin(IOptions<DiscordOptions> options)
     {
-        var scheme = await provider.GetSchemeAsync("Discord");
-        if (scheme is null) // This really shouldn't happen, but if the server isn't configured properly we should say something.
-            return Results.BadRequest("Provider scheme 'Discord' does not exist.");
-
-        // Generate the challenge, this will redirect the user to discord's oauth page.
-        return Results.Challenge(new AuthenticationProperties { RedirectUri = "/auth/claims" }, new string[] { scheme.Name });
+        var discord = options.Value;
+        var redirectTo = $"{AtlasConstants.DiscordApiUrl}/oauth2/authorize?response_type=code&client_id={discord.ClientId}&scope=identify email&redirect_uri={discord.RedirectUrl}";
+        return Results.Redirect(redirectTo, preserveMethod: false);
     }
 
     internal static IResult ViewUserClaims(ClaimsPrincipal principal)
@@ -50,19 +44,41 @@ public static class AuthEndpoints
         return Results.Ok(principal.Claims.Select(c => new ViewableClaim(c.Type, c.Value)));
     }
 
-    internal static IResult SignOut()
+    internal static async Task<IResult> GenerateToken(IOptions<JwtOptions> options, JwtSecurityTokenHandler handler, IDiscordService discordService, IAuthService authService, [FromBody] CodeBody body)
     {
-        return Results.SignOut(new AuthenticationProperties { RedirectUri = "/auth/claims" }, new string[] { CookieAuthenticationDefaults.AuthenticationScheme });
-    }
+        var accessToken = await discordService.GetAccessTokenAsync(body.Code);
+        if (accessToken is null)
+            return Results.BadRequest(new Error { ErrorName = "Invalid code" });
 
-    internal static IResult GenerateToken(ClaimsPrincipal principal, IOptions<JwtOptions> options, JwtSecurityTokenHandler handler)
-    {
+        var profile = await discordService.GetProfileAsync(accessToken);
+        if (profile is null)
+            return Results.BadRequest(new Error { ErrorName = "Could not find profile" });
+
+        List<Claim> claims = new()
+        {
+            new Claim(ClaimTypes.Name, profile.Username),
+            new Claim(ClaimTypes.NameIdentifier, profile.Id),
+            new Claim("urn:discord:avatar:hash", profile.Avatar),
+            new Claim("urn:discord:user:discriminator", profile.Discriminator),
+        };
+
+        if (profile.Email is not null)
+            claims.Add(new Claim(ClaimTypes.Email, profile.Email));
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        var user = await authService.GetUserAsync(principal);
+
+        if (user is null)
+            return Results.BadRequest(new Error { ErrorName = "Could not acquire authentication requirements" });
+
+        claims.Add(new Claim(AtlasConstants.IdentifierClaimType, user.Id.ToString()));
+
         var jwt = options.Value;
         SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(jwt.Key));
         SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
 
         var lifetime = DateTime.UtcNow.AddHours(jwt.TokenLifetimeInHours);
-        JwtSecurityToken secToken = new(issuer: jwt.Issuer, audience: jwt.Audience, principal.Claims, expires: lifetime, signingCredentials: credentials);
+        JwtSecurityToken secToken = new(issuer: jwt.Issuer, audience: jwt.Audience, claims, expires: lifetime, signingCredentials: credentials);
         var token = handler.WriteToken(secToken);
 
         return Results.Ok(new ViewableToken(token));

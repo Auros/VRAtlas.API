@@ -21,6 +21,10 @@ public static class ContextEndpoints
 
     public static IEndpointRouteBuilder MapContextEndpoints(this IEndpointRouteBuilder builder)
     {
+        builder.MapGet("/contexts/{id:guid}", GetContext)
+               .Produces<Context>(StatusCodes.Status200OK)
+               .Produces(StatusCodes.Status404NotFound);
+
         builder.MapGet("/contexts", GetAllContexts)
                .Produces<IEnumerable<Context>>(StatusCodes.Status200OK);
 
@@ -43,6 +47,14 @@ public static class ContextEndpoints
                .RequireAuthorization("ManageContexts");
 
         return builder;
+    }
+
+    internal static async Task<IResult> GetContext(Guid id, AtlasContext atlasContext)
+    {
+        var context = await atlasContext.Contexts.FirstOrDefaultAsync(c => c.Id == id);
+        if (context is null)
+            return Results.NotFound(new Error { ErrorName = "Context does not exist" });
+        return Results.Ok(context);
     }
 
     internal static async Task<IResult> GetAllContexts(AtlasContext atlasContext)

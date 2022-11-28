@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using VRAtlas.Authorization;
+using VRAtlas.Endpoints.Internal;
 using VRAtlas.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ builder.Services.AddAuthorization(options =>
         "edit:event"
     });
 });
+builder.Services.AddVRAtlasEndpoints();
 
 var app = builder.Build();
 
@@ -33,5 +35,6 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => "Hello World!");
+app.UseVRAtlasEndpoints();
+
 app.Run();

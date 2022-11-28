@@ -5,8 +5,10 @@ using VRAtlas.Authorization;
 using VRAtlas.Options;
 
 var builder = WebApplication.CreateBuilder(args);
-var auth0 = builder.Configuration.GetValue<Auth0Options>(Auth0Options.Name)!;
+var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>()!;
 
+builder.Services.AddSwaggerGen();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -24,6 +26,9 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -38,3 +38,5 @@ app.UseAuthorization();
 app.UseVRAtlasEndpoints();
 
 app.Run();
+
+public partial class Program { /* Used as a class marker for tests */ }

@@ -13,7 +13,8 @@ public class StatusEndpoints : IEndpointCollection
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         app.MapGet("/status", GetStatus)
-            .Produces<ApiStatus>(StatusCodes.Status200OK);
+            .Produces<ApiStatus>(StatusCodes.Status200OK)
+            .WithTags("Status");
     }
 
     private static IResult GetStatus()

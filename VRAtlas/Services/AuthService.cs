@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using NodaTime;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using VRAtlas.Logging;
 using VRAtlas.Options;
@@ -66,7 +67,7 @@ public class AuthService : IAuthService
         }
 
         _atlasLogger.LogInformation("Successfully performed credential request");
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+        var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(await response.Content.ReadAsStringAsync());
         var time = _clock.GetCurrentInstant() + Duration.FromSeconds(tokenResponse!.ExpiresInSeconds);
         _accessToken = tokenResponse!.AccessToken;
         _timeUntilRefresh = time;
@@ -75,9 +76,9 @@ public class AuthService : IAuthService
     private class TokenResponse
     {
         [JsonPropertyName("access_token")]
-        public required string AccessToken { get; set; }
+        public string AccessToken { get; set; } = null!;
 
         [JsonPropertyName("expires_in")]
-        public required int ExpiresInSeconds { get; set; }
+        public int ExpiresInSeconds { get; set; }
     }
 }

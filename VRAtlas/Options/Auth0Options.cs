@@ -11,4 +11,10 @@ public class Auth0Options
 
     [Required]
     public required string Audience { get; set; }
+
+    [Required]
+    public required string ClientId { get; set; }
+
+    [Required]
+    public required string ClientSecret { get; set; }
 }

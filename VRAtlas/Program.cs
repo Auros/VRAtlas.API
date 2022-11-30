@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using NodaTime;
+using Quartz;
 using Serilog;
 using Serilog.Events;
 using System.Security.Claims;
@@ -20,6 +21,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>()!;
+var quartzConnString = builder.Configuration.GetConnectionString("Quartz") ?? string.Empty;
 
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
@@ -49,6 +51,20 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHttpClient("Auth0", client =>
 {
     client.BaseAddress = new Uri(auth0.Domain);
+});
+builder.Services.AddQuartz(options =>
+{
+    options.UseMicrosoftDependencyInjectionJobFactory();
+    options.UseDefaultThreadPool(tpo => tpo.MaxConcurrency = 10);
+    options.UsePersistentStore(store =>
+    {
+        store.UsePostgres(quartzConnString);
+        store.UseJsonSerializer();
+    });
+});
+builder.Services.AddQuartzServer(options =>
+{
+    options.WaitForJobsToComplete = true;
 });
 
 var app = builder.Build();

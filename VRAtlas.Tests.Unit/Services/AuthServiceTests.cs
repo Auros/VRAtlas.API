@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using MockHttpClient;
 using NodaTime;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using System.Net;
 using System.Text.Json.Serialization;
 using VRAtlas.Logging;

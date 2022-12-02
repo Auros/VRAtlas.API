@@ -8,11 +8,6 @@ namespace VRAtlas.Endpoints;
 
 public class AuthEndpoints : IEndpointCollection
 {
-    public static void AddServices(IServiceCollection services)
-    {
-        // None
-    }
-
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         app.MapGet("/auth", GetUser)

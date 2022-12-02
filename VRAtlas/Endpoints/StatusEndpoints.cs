@@ -5,11 +5,6 @@ namespace VRAtlas.Endpoints;
 
 public class StatusEndpoints : IEndpointCollection
 {
-    public static void AddServices(IServiceCollection services)
-    {
-        // Unused | The status endpoints do not depend on any unique services
-    }
-
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         app.MapGet("/status", GetStatus)

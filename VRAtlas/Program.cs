@@ -1,13 +1,15 @@
+using LitJWT;
+using LitJWT.Algorithms;
 using MicroElements.Swashbuckle.NodaTime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using VRAtlas.Authorization;
@@ -20,21 +22,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Setup our logger with Serilog
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Verbose()
-    //.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Debug)
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Debug)
     .Enrich.FromLogContext()
     .WriteTo.Async(options => options.Console())
     .CreateLogger();
 
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>()!;
+var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>()!;
 var quartzConnString = builder.Configuration.GetConnectionString("Quartz") ?? string.Empty;
 
+builder.Services.AddSingleton<JwtEncoder>();
+builder.Services.AddSingleton(services => new JwtDecoder(services.GetRequiredService<IJwtAlgorithm>()));
+builder.Services.AddSingleton<IJwtAlgorithm>(services => new HS256Algorithm(Encoding.UTF8.GetBytes(auth0.ClientSecret)));
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
+builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
+builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOptions.Name).ValidateDataAnnotations();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
 builder.Services.AddSwaggerGen(options =>
 {
     options.ConfigureForNodaTimeWithSystemTextJson();
@@ -68,6 +75,11 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHttpClient("Auth0", client =>
 {
     client.BaseAddress = new Uri(auth0.Domain);
+});
+builder.Services.AddHttpClient("Cloudflare", client =>
+{
+    client.BaseAddress = cloudflare.ApiUrl;
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", cloudflare.ApiKey);
 });
 builder.Services.AddQuartz(options =>
 {

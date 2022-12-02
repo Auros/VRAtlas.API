@@ -1,5 +1,5 @@
-﻿namespace VRAtlas.Logging;
-#pragma warning disable CA2254 // Template should be a static expression
+﻿#pragma warning disable CA2254 // Template should be a static expression
+namespace VRAtlas.Logging;
 
 public class AtlasLogger<T> : IAtlasLogger<T>
 {
@@ -24,6 +24,10 @@ public class AtlasLogger<T> : IAtlasLogger<T>
     {
 		_logger.LogWarning(message, args);
     }
-}
 
+    public void LogDebug(string? message, params object?[] args)
+    {
+        _logger.LogDebug(message, args);
+    }
+}
 #pragma warning restore CA2254 // Template should be a static expression

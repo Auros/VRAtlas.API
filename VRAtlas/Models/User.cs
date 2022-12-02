@@ -1,11 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
 [Index(nameof(Id))]
+[Index(nameof(SocialId))]
 public class User
 {
-    public Guid Id { get; set; }
+    public required Guid Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public required string Username { get; set; }
+
+    [JsonIgnore]
+    public required string SocialId { get; set; }
 }

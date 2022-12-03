@@ -1,10 +1,8 @@
 ﻿using LitJWT;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
 using VRAtlas.Logging;
 using VRAtlas.Models;
-using VRAtlas.Options;
 
 namespace VRAtlas.Services;
 

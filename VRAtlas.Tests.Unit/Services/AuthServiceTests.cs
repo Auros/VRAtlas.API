@@ -42,10 +42,7 @@ public class AuthServiceTests
             ClientSecret = "clientsecret",
             Domain = "https://localhost"
         });
-        MockHttpClient.MockHttpClient mockClient = new()
-        {
-            BaseAddress = new Uri("https://localhost")
-        };
+        MockHttpClient.MockHttpClient mockClient = new() { BaseAddress = new Uri("https://localhost") };
         _httpClientFactory.CreateClient("Auth0").Returns(mockClient);
         mockClient.When($"/api/v2/users/{userId}/roles").Then(_ => new HttpResponseMessage());
         mockClient.When("/oauth/token").Then(_ => new HttpResponseMessage().WithJsonContent(tokenResponse));
@@ -75,10 +72,7 @@ public class AuthServiceTests
             ClientSecret = "clientsecret",
             Domain = "https://localhost"
         });
-        MockHttpClient.MockHttpClient mockClient = new()
-        {
-            BaseAddress = new Uri("https://localhost")
-        };
+        MockHttpClient.MockHttpClient mockClient = new() { BaseAddress = new Uri("https://localhost") };
         _httpClientFactory.CreateClient("Auth0").Returns(mockClient);
         mockClient.When($"/api/v2/users/{userId}/roles").Then(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
         mockClient.When("/oauth/token").Then(_ => new HttpResponseMessage().WithJsonContent(tokenResponse));

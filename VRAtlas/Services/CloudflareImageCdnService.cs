@@ -11,7 +11,7 @@ public interface IImageCdnService
     /// <param name="source">The source of the image.</param>
     /// <param name="metadata">Metadata to include with the uploaded image.</param>
     /// <returns>The resource identifier for the uploaded image.</returns>
-    Task<string> UploadAsync(Uri source, string? metadata);
+    Task<Guid> UploadAsync(Uri source, string? metadata);
 
     /// <summary>
     /// Gets a URL to send upload data to.
@@ -35,10 +35,10 @@ public class CloudflareImageCdnService : IImageCdnService
     public async Task<Uri> GetUploadUriAsync(Guid? uploaderId = null)
     {
         var client = _httpClientFactory.CreateClient("Cloudflare");
+        _atlasLogger.LogInformation("Fetching upload url for {Uploader}", uploaderId);
 
         // Setup the http content required for the upload.
         // This includes tagging the uploader id if it's necessary for resource upload validation.
-        _atlasLogger.LogInformation("Fetching upload url for {Uploader}", uploaderId);
         MultipartFormDataContent content = new();
         if (uploaderId.HasValue)
             content.Add(new StringContent($$"""{"uploaderId":"{{uploaderId.Value}}"}"""), "\"metadata\"");
@@ -61,10 +61,10 @@ public class CloudflareImageCdnService : IImageCdnService
         return body!.Result.UploadUrl;
     }
 
-    public async Task<string> UploadAsync(Uri source, string? metadata)
+    public async Task<Guid> UploadAsync(Uri source, string? metadata)
     {
         var client = _httpClientFactory.CreateClient("Cloudflare");
-        _atlasLogger.LogInformation("Uploading {ImageUrl} to Cloudflare", source);
+        _atlasLogger.LogInformation("Uploading {ImageUrl} to Cloudflare", source); 
 
         // Setup the http content required for the upload.
         // This is where we provide our source url.
@@ -102,8 +102,8 @@ public class CloudflareImageCdnService : IImageCdnService
 
     private class UploadSourceResult
     {
-        [JsonPropertyName("result")]
-        public string Id { get; set; } = null!;
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
     }
 
     private class CloudflareResult<T> where T : class

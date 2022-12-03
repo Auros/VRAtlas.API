@@ -7,7 +7,7 @@ public static class EndpointExtensions
     public static void AddVRAtlasEndpoints(this IServiceCollection services)
     {
         foreach (var type in GetEndpointCollectionTypes())
-            type.GetMethod(nameof(IEndpointCollection.AddServices))!.Invoke(null, new[] { services });
+            type.GetMethod(nameof(IEndpointCollection.AddServices))?.Invoke(null, new[] { services });
     }
 
     public static void UseVRAtlasEndpoints(this IEndpointRouteBuilder builder)

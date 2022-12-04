@@ -1,22 +1,14 @@
 ﻿using System.Net;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
-using WireMock.Server;
 
 namespace VRAtlas.Tests.Integration.Servers;
 
-internal class CloudflareApiServer : IDisposable
+internal class CloudflareApiServer : ApiServer
 {
-    private WireMockServer _server = null!;
-
-    public Uri Url { get; private set; } = null!;
-
-    public void Start(string accountHash)
+    public void Configure(string accountHash)
     {
-        _server = WireMockServer.Start();
-        Url = new Uri(_server.Url!);
-
-        _server.Given(Request.Create()
+        Server.Given(Request.Create()
             .WithPath($"/client/v4/accounts/{accountHash}/images/v2/direct_upload")
             .UsingPost())
             .RespondWith(Response.Create()
@@ -30,7 +22,7 @@ internal class CloudflareApiServer : IDisposable
                 }
                 """));
 
-        _server.Given(Request.Create()
+        Server.Given(Request.Create()
             .WithPath($"/client/v4/accounts/{accountHash}/images/v1")
             .UsingPost())
             .RespondWith(Response.Create()
@@ -43,11 +35,5 @@ internal class CloudflareApiServer : IDisposable
                     }
                 }
                 """));
-    }
-
-    public void Dispose()
-    {
-        _server.Stop();
-        _server.Dispose();
     }
 }

@@ -3,10 +3,10 @@ using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using VRAtlas.Options;
 using VRAtlas.Tests.Integration.Servers;
 using Xunit;
 
@@ -14,12 +14,21 @@ namespace VRAtlas.Tests.Integration;
 
 public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private readonly Auth0ApiServer _auth0ApiServer;
     private readonly CloudflareApiServer _cloudflareApiServer;
     private readonly PostgreSqlTestcontainer _mainDatabaseContainer;
     private readonly PostgreSqlTestcontainer _quartzDatabaseContainer;
+    private readonly Auth0Options _auth0Options = new()
+    {
+        ClientId = nameof(VRAtlas),
+        ClientSecret = nameof(VRAtlas),
+        Audience = "https://test.vratlas.io",
+        Domain = "https://this.will-get.re/assigned"
+    };
 
     public VRAtlasFactory()
     {
+        _auth0ApiServer = new Auth0ApiServer();
         _cloudflareApiServer = new CloudflareApiServer();
 
         _mainDatabaseContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
@@ -50,17 +59,27 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
+                { "Cloudflare:ApiKey", nameof(VRAtlas) },
+                { "Cloudflare:ApiUrl", _cloudflareApiServer.Url },
+                { "Auth0:Domain", _auth0Options.Domain },
+                { "Auth0:Audience", _auth0Options.Audience },
+                { "Auth0:ClientId", _auth0Options.ClientId },
+                { "Auth0:ClientSecret", _auth0Options.ClientSecret },
                 { "ConnectionStrings:Main", _mainDatabaseContainer.ConnectionString },
                 { "ConnectionStrings:Quartz", _quartzDatabaseContainer.ConnectionString },
-                { "Cloudflare:ApiUrl", _cloudflareApiServer.Url.ToString() },
-                { "ConnectionStrings:ApiKey", nameof(VRAtlas) },
             });
         });
     }
 
     public async Task InitializeAsync()
     {
-        _cloudflareApiServer.Start("abcdefghijklmnopqrstuvwxyz");
+        _auth0ApiServer.Start();
+        _cloudflareApiServer.Start();
+
+        _auth0Options.Domain = _auth0ApiServer.Url;
+        _auth0ApiServer.Configure("mycode", "vratlas.test|123456", _auth0Options.Audience, _auth0Options.ClientId, _auth0Options.ClientSecret, "https://redirect.vratlas.io/api/auth/callback");
+        _cloudflareApiServer.Configure("abcdefghijklmnopqrstuvwxyz");
+        
         await _mainDatabaseContainer.StartAsync();
         await _quartzDatabaseContainer.StartAsync();
 

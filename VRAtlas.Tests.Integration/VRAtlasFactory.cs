@@ -3,9 +3,17 @@ using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Quartz;
+using Quartz.Core;
+using System.Linq;
 using VRAtlas.Options;
 using VRAtlas.Tests.Integration.Servers;
 using Xunit;
@@ -69,8 +77,16 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 { "ConnectionStrings:Quartz", _quartzDatabaseContainer.ConnectionString },
             });
         });
-    }
 
+        builder.ConfigureTestServices(services =>
+        {
+            services.Configure<QuartzOptions>(options =>
+            {
+                options["quartz.scheduler.instanceName"] = "QuartzScheduler_Tests_" + _quartzDatabaseContainer.Name;
+                options["quartz.dataSource.default.connectionString"] = _quartzDatabaseContainer.ConnectionString;
+            });
+        });
+    }
     public async Task InitializeAsync()
     {
         _auth0ApiServer.Start();
@@ -89,6 +105,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     async Task IAsyncLifetime.DisposeAsync()
     {
+        _auth0ApiServer.Dispose();
         _cloudflareApiServer.Dispose();
         await _mainDatabaseContainer.StopAsync();
         await _quartzDatabaseContainer.StopAsync();

@@ -26,7 +26,7 @@ public class CloudflareImageCdnService : IImageCdnService
     private readonly IAtlasLogger _atlasLogger;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public CloudflareImageCdnService(IAtlasLogger atlasLogger, IHttpClientFactory httpClientFactory)
+    public CloudflareImageCdnService(IAtlasLogger<CloudflareImageCdnService> atlasLogger, IHttpClientFactory httpClientFactory)
     {
         _atlasLogger = atlasLogger;
         _httpClientFactory = httpClientFactory;

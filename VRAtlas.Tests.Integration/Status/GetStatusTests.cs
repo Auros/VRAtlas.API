@@ -6,6 +6,7 @@ using Xunit;
 
 namespace VRAtlas.Tests.Integration.Status;
 
+[CollectionDefinition(StatusCollection.Definition)]
 public class GetStatusTests : IClassFixture<VRAtlasFactory>
 {
     private readonly HttpClient _httpClient;
@@ -16,12 +17,15 @@ public class GetStatusTests : IClassFixture<VRAtlasFactory>
 	}
 
 	[Fact]
-	public async Task Get_Status()
+	public async Task Get_Status_ReturnsOKStatus()
 	{
+		// Arrange
 		ApiStatus okStatus = new() { Status = "OK" };
 
+		// Act
 		using var response = await _httpClient.GetAsync("status");
 
+		// Assert
 		response.StatusCode.Should().Be(HttpStatusCode.OK);
 		var status = await response.Content.ReadFromJsonAsync<ApiStatus>();
 		status.Should().BeEquivalentTo(okStatus);

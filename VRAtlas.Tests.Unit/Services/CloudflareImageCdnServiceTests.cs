@@ -13,7 +13,7 @@ public class CloudflareImageCdnServiceTests
 {
     private readonly CloudflareImageCdnService _sut;
     private readonly IHttpClientFactory _httpClientFactory = Substitute.For<IHttpClientFactory>();
-    private readonly IAtlasLogger<AuthService> _atlasLogger = Substitute.For<IAtlasLogger<AuthService>>();
+    private readonly IAtlasLogger<CloudflareImageCdnService> _atlasLogger = Substitute.For<IAtlasLogger<CloudflareImageCdnService>>();
 
     public CloudflareImageCdnServiceTests()
 	{

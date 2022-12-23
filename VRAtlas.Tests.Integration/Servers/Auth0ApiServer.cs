@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -20,10 +21,9 @@ internal class Auth0ApiServer : ApiServer
                 }
                 """));
 
-        var escape = Uri.EscapeDataString;
-        var oauthUrl = $"/oauth/token?audience={escape(audience)}&client_id={escape(clientId)}&grant_type=client_credentials&client_secret={escape(clientSecret)}";
         Server.Given(Request.Create()
-            .WithPath(oauthUrl)
+            .WithPath("/oauth/token")
+            .WithHeader("Content-Type", new ExactMatcher("application/x-www-form-urlencoded"))
             .UsingPost())
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)
@@ -35,19 +35,20 @@ internal class Auth0ApiServer : ApiServer
                 }
                 """));
 
-        var codeUrl = $"/oauth/token?code={escape(code)}&redirect_uri={escape(redirectUri)}&client_id={escape(clientId)}&grant_type=authorization_code&client_secret={escape(clientSecret)}";
         Server.Given(Request.Create()
-            .WithPath(codeUrl)
+            .WithPath("/oauth/token")
+            .WithHeader("Content-Type", new ExactMatcher("application/x-www-form-urlencoded"))
+            .WithHeader("Content-Length", new ExactMatcher("157"))
             .UsingPost())
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody("""
+                .WithBody($$"""
                 {
-                    "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2cmF0bGFzLnRlc3R8MTIzNDU2IiwibmFtZSI6IlZSQXRsYXMgVXNlciIsInBpY3R1cmUiOiJodHRwczovL3RoaXJkcGFydHkudnJhdGxhcy5jb20vaW1hZ2VzLzEyMzQ1Ni9hc2RmaGFzaGFzZGYvaW1hZ2UucG5nP3NpemU9NTEyIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE3NjQ1NjUyMDB9.kU19IW5X1ZIY78v3TyuN8HA1H_E0hZY2fJE7Lzop1B4",
-                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2cmF0bGFzLnRlc3R8MTIzNDU2IiwibmFtZSI6IlZSQXRsYXMgVXNlciIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNzY0NTY1MjAwfQ.b0vwZkjjDqrwpmFMGwztIgZP1or37swFMWJj9jfGiGg",
+                    "id_token": "{{TestConstants.ValidUserIdToken}}",
+                    "access_token": "{{TestConstants.ValidUserAccessToken}}",
                     "refresh_token": null,
-                    "expires_in": 604800
+                    "expires_in": {{TestConstants.ValidUserTokenExpiration}}
                 }
                 """));
     }

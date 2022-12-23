@@ -1,6 +1,7 @@
 ﻿using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -26,7 +27,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         ClientId = nameof(VRAtlas),
         ClientSecret = nameof(VRAtlas),
         Audience = "https://test.vratlas.io",
-        Domain = "https://this.will-get.re/assigned"
+        Domain = "https://test.vratlas.io"
     };
 
     public VRAtlasFactory()
@@ -80,6 +81,11 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 options["quartz.scheduler.instanceName"] = "QuartzScheduler_Tests_" + _quartzDatabaseContainer.Name;
                 options["quartz.dataSource.default.connectionString"] = _quartzDatabaseContainer.ConnectionString;
             });
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = "Test";
+                options.DefaultChallengeScheme = "Test";
+            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
         });
     }
     public async Task InitializeAsync()

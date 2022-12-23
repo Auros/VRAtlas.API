@@ -10,6 +10,7 @@ public class UserEndpoints : IEndpointCollection
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         app.MapGet("/user/@me", GetAuthUser)
+            .RequireAuthorization()
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
     }

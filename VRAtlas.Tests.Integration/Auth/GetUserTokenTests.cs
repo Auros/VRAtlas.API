@@ -33,10 +33,10 @@ public class GetUserTokenTests : IClassFixture<VRAtlasFactory>
 
         // Act
         using var response = await _httpClient.GetAsync($"auth/token?code={escape(code)}&redirectUri={redirectUri}");
-        var status = await response.Content.ReadFromJsonAsync<UserTokens>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<UserTokens>();
         status.Should().BeEquivalentTo(expectedTokens);
     }
 

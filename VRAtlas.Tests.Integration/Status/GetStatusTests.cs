@@ -17,7 +17,7 @@ public class GetStatusTests : IClassFixture<VRAtlasFactory>
 	}
 
 	[Fact]
-	public async Task Get_Status_ReturnsOKStatus()
+	public async Task GetStatus_ShouldReturnOK()
 	{
 		// Arrange
 		ApiStatus okStatus = new() { Status = "OK" };

@@ -17,7 +17,7 @@ public class GetUserTokenTests : IClassFixture<VRAtlasFactory>
     }
 
     [Fact]
-    public async Task GetAuthToken_ReturnsValidTokens_WithValidInputs()
+    public async Task GetAuthToken_ShouldReturnValidTokens_WithValidInputs()
     {
         // Arrange
         var escape = Uri.EscapeDataString;
@@ -41,7 +41,7 @@ public class GetUserTokenTests : IClassFixture<VRAtlasFactory>
     }
 
     [Fact]
-    public async Task GetAuthToken_ReturnsInternalError_WithInvalidCode()
+    public async Task GetAuthToken_ShouldReturnInternalError_WithInvalidCode()
     {
         // Arrange
         var escape = Uri.EscapeDataString;
@@ -56,7 +56,7 @@ public class GetUserTokenTests : IClassFixture<VRAtlasFactory>
     }
 
     [Fact]
-    public async Task GetAuthToken_ReturnsInternalError_WithInvalidRedirectUri()
+    public async Task GetAuthToken_ShouldReturnInternalError_WithInvalidRedirectUri()
     {
         // Arrange
         var escape = Uri.EscapeDataString;

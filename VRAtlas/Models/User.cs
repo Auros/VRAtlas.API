@@ -15,14 +15,14 @@ public class User
     public Guid Picture { get; set; } 
 
     [JsonIgnore]
-    public required string SocialId { get; set; }
+    public string SocialId { get; set; } = null!;
 
     [JsonIgnore]
     public UserMetadata Metadata { get; set; } = null!;
 
     [JsonIgnore]
-    public required Instant JoinedAt { get; set; }
+    public Instant JoinedAt { get; set; }
 
     [JsonIgnore]
-    public required Instant LastLoginAt { get; set; }
+    public Instant LastLoginAt { get; set; }
 }

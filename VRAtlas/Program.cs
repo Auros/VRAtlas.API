@@ -36,16 +36,26 @@ Log.Logger = logger;
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>()!;
 var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>()!;
 
+// Service registration
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserGrantService, UserGrantService>();
+builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
+
+// Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();
 builder.Services.AddSingleton(services => new JwtDecoder(services.GetRequiredService<IJwtAlgorithm>()));
 builder.Services.AddSingleton<IJwtAlgorithm>(services => new HS256Algorithm(Encoding.UTF8.GetBytes(services.GetRequiredService<IOptions<Auth0Options>>().Value.ClientSecret)));
-builder.Services.AddSingleton<IAuthService, AuthService>();
+
+// Core registration
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
-builder.Services.AddScoped<IUserGrantService, UserGrantService>();
-builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
 builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
+
+// Option registration
 builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
 builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOptions.Name).ValidateDataAnnotations();
+
+// Other registration
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AtlasContext>((container, options) =>

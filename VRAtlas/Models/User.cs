@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
@@ -17,8 +18,9 @@ public class User
     [JsonIgnore]
     public string SocialId { get; set; } = null!;
 
+    [Required]
     [JsonIgnore]
-    public UserMetadata Metadata { get; set; } = null!;
+    public UserMetadata? Metadata { get; set; }
 
     [JsonIgnore]
     public Instant JoinedAt { get; set; }

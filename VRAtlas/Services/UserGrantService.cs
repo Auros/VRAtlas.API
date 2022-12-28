@@ -62,7 +62,7 @@ public class UserGrantService : IUserGrantService
         }
 
         // If username synchronization is on and the username from the most recent identity update does not match the current user, update them.
-        if (user.Metadata.SynchronizeUsernameWithSocialPlatform && payload.Name != user.Username)
+        if (user.Metadata!.SynchronizeUsernameWithSocialPlatform && payload.Name != user.Username)
         {
             _atlasLogger.LogInformation("Reassigning {UserId}'s username from {OldUsername} to {NewUsername}", user.Id, user.Username, payload.Name);
             user.Username = payload.Name;

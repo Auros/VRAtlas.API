@@ -24,6 +24,8 @@ public class Event
 
     public Instant EndTime { get; set; }
 
+    public List<Tag>? Tags { get; set; }
+
     public Guid Media { get; set; }
 
     public RSVP? RSVP { get; set; }

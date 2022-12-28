@@ -5,6 +5,8 @@ namespace VRAtlas;
 
 public class AtlasContext : DbContext
 {
+    public DbSet<Tag> Tags => Set<Tag>();
+
     public DbSet<User> Users => Set<User>();
 
     public DbSet<Event> Events => Set<Event>();
@@ -14,5 +16,10 @@ public class AtlasContext : DbContext
     public AtlasContext(DbContextOptions options) : base(options)
     {
 
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Tag>().HasMany<Event>().WithMany(t => t.Tags);
     }
 }

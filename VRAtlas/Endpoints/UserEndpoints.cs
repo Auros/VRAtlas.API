@@ -13,6 +13,10 @@ public class UserEndpoints : IEndpointCollection
             .RequireAuthorization()
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
+
+        app.MapGet("/user/{id:guid}", GetUserById)
+            .Produces<User>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> GetAuthUser(IUserService userService, ClaimsPrincipal principal)
@@ -20,6 +24,15 @@ public class UserEndpoints : IEndpointCollection
         var user = await userService.GetUserAsync(principal);
         if (user is null)
             return Results.Unauthorized();
+
+        return Results.Ok(user);
+    }
+
+    private static async Task<IResult> GetUserById(IUserService userService, Guid id)
+    {
+        var user = await userService.GetUserAsync(id);
+        if (user is null)
+            return Results.NotFound();
 
         return Results.Ok(user);
     }

@@ -86,4 +86,39 @@ public sealed class UserServiceTests : IClassFixture<AtlasFixture>
         _atlasContext.Remove(user);
         await _atlasContext.SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task GetUserAsync_ShouldReturnUser_WithExistingUserId()
+    {
+        // Arrange
+        var user = AtlasFakes.User.Generate();
+
+        _atlasContext.Users.Add(user);
+        await _atlasContext.SaveChangesAsync();
+
+        // Act
+        var fetchedUser = await _sut.GetUserAsync(user.Id);
+
+        // Assert
+        fetchedUser.Should().NotBeNull();
+        fetchedUser!.Id.Should().Be(user.Id);
+        fetchedUser!.Username.Should().Be(user.Username);
+
+        // Cleanup
+        _atlasContext.Remove(user);
+        await _atlasContext.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task GetUserAsync_ShouldReturnNull_WithUnknownUserId()
+    {
+        // Arrange
+        Guid randomId = Guid.NewGuid();
+
+        // Act
+        var fetchedUser = await _sut.GetUserAsync(randomId);
+
+        // Assert
+        fetchedUser.Should().BeNull();
+    }
 }

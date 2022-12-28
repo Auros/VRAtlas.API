@@ -6,6 +6,7 @@ namespace VRAtlas.Services;
 
 public interface IUserService
 {
+    Task<User?> GetUserAsync(Guid id);
     Task<User?> GetUserAsync(ClaimsPrincipal principal);
 }
 
@@ -16,6 +17,11 @@ public class UserService : IUserService
     public UserService(AtlasContext atlasContext)
     {
         _atlasContext = atlasContext;
+    }
+
+    public Task<User?> GetUserAsync(Guid id)
+    {
+        return _atlasContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public Task<User?> GetUserAsync(ClaimsPrincipal principal)

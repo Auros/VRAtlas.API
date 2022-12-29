@@ -38,6 +38,7 @@ var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<Cl
 
 // Service registration
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();

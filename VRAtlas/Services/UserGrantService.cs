@@ -37,10 +37,12 @@ public class UserGrantService : IUserGrantService
 
         // Look for the user based on their social id
         var user = await _atlasContext.Users.Include(u => u.Metadata).FirstOrDefaultAsync(u => u.SocialId == payload.SocialId);
-        
+        bool newUser = false;
+
         // Check if the user has not been created yet
         if (user is null)
         {
+            newUser = true;
             _atlasLogger.LogInformation("Creating a new user with the username {Username} and social platform identifier {PlatformId}", payload.Name, payload.SocialId);
             // If so, create the user with the required values and add them to the context
             user = new User
@@ -70,7 +72,7 @@ public class UserGrantService : IUserGrantService
         }
 
         // If profile picture synchronization is on and the profile picture from the most recent identity update does not match the current user, update them.
-        if (user.Metadata.SynchronizeProfilePictureWithSocialPlatform && payload.Picture != user.Metadata.ProfilePictureUrl)
+        if (newUser || (user.Metadata.SynchronizeProfilePictureWithSocialPlatform && payload.Picture != user.Metadata.ProfilePictureUrl))
         {
             _atlasLogger.LogInformation("Reassigning {UserId}'s profile picture from {OldPictureSource} to {NewPictureSource}", user.Id, user.Metadata.ProfilePictureUrl, payload.Picture);
 

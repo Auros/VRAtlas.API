@@ -11,7 +11,6 @@ using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
-using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -26,8 +25,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Setup our logger with Serilog
 var logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Debug)
+    .MinimumLevel.Information()
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Async(options => options.Console())
     .CreateLogger();

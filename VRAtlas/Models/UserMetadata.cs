@@ -17,5 +17,4 @@ public class UserMetadata
 
     [NotMapped]
     public Uri ProfilePictureUrl => new(CurrentSocialPlatformProfilePicture);
-
 }

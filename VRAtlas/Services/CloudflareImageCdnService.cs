@@ -14,11 +14,19 @@ public interface IImageCdnService
     Task<Guid> UploadAsync(Uri source, string? metadata);
 
     /// <summary>
-    /// Gets a URL to send upload data to.
+    /// Gets a URL to send upload image data to.
     /// </summary>
     /// <param name="uploaderId">The id of the user who is allowed to upload an image with the resulting uri.</param>
-    /// <returns></returns>
+    /// <returns>The uri to upload an image to.</returns>
     Task<Uri> GetUploadUriAsync(Guid? uploaderId = null);
+
+    /// <summary>
+    /// Validates if an image is valid.
+    /// </summary>
+    /// <param name="uploadId">The id of the image resource.</param>
+    /// <param name="uploaderId">If not null, includes the uploader in the validation. Fails if the user who uploaded the image isn't the provided user.</param>
+    /// <returns>If true, the image is valid in the given context.</returns>
+    Task<bool> ValidateAsync(Guid uploadId, Guid? uploaderId = null);
 }
 
 public class CloudflareImageCdnService : IImageCdnService
@@ -94,6 +102,36 @@ public class CloudflareImageCdnService : IImageCdnService
         return id;
     }
 
+    public async Task<bool> ValidateAsync(Guid uploadId, Guid? uploaderId = null)
+    {
+        _atlasLogger.LogDebug("Starting image validation for upload {UploadId} and uploader {UploaderId}", uploadId, uploaderId);
+
+        var client = _httpClientFactory.CreateClient("Cloudflare");
+
+        var response = await client.GetAsync($"images/v1/{uploadId}");
+
+        // Ensure the request passes.
+        if (!response.IsSuccessStatusCode)
+        {
+            _atlasLogger.LogWarning("Could not validate {UploadId} via Cloudflare", uploadId);
+            return false;
+        }
+
+        // If an uploader id was provided, ensure that it was this id that uploaded the original image.
+        if (uploaderId.HasValue)
+        {
+            var body = await response.Content.ReadFromJsonAsync<CloudflareResult<ValidationMeta>>();
+            if (body!.Result.UploaderId != uploaderId.Value)
+            {
+                _atlasLogger.LogWarning("Uploader {UploaderId} tried to validate against an image uploaded by {TrueUploaderId}", body!.Result.UploaderId);
+                return false;
+            }
+        }
+
+        _atlasLogger.LogDebug("Successfuly validated the image {UploadId}", uploadId);
+        return true;
+    }
+
     private class UploadUrlResult
     {
         [JsonPropertyName("uploadURL")]
@@ -104,6 +142,18 @@ public class CloudflareImageCdnService : IImageCdnService
     {
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
+    }
+
+    private class ValidateUrlResult
+    {
+        [JsonPropertyName("meta")]
+        public ValidationMeta Meta { get; set; } = null!;
+    }
+
+    private class ValidationMeta
+    {
+        [JsonPropertyName("uploaderId")]
+        public Guid UploaderId { get; set; }
     }
 
     private class CloudflareResult<T> where T : class

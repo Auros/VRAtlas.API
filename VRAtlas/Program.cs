@@ -2,8 +2,10 @@ using LitJWT;
 using LitJWT.Algorithms;
 using MicroElements.Swashbuckle.NodaTime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NodaTime;
@@ -49,6 +51,7 @@ builder.Services.AddSingleton<IJwtAlgorithm>(services => new HS256Algorithm(Enco
 
 // Core registration
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
+builder.Services.AddSingleton<IAuthorizationHandler, HasPermissionHandler>();
 builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
 
 // Option registration
@@ -88,9 +91,9 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization(options =>
 {
-    options.AddScopes(auth0.Domain, new string[]
+    options.AddPermissions(auth0.Domain, new string[]
     {
-        "edit:event"
+        "read:upload_url"
     });
 });
 builder.Services.AddHttpClient("Auth0", (container, client) =>
@@ -99,8 +102,9 @@ builder.Services.AddHttpClient("Auth0", (container, client) =>
 });
 builder.Services.AddHttpClient("Cloudflare", (container, client) =>
 {
-    client.BaseAddress = cloudflare.ApiUrl;
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", container.GetRequiredService<IOptions<CloudflareOptions>>().Value.ApiKey);
+    var options = container.GetRequiredService<IOptions<CloudflareOptions>>().Value;
+    client.BaseAddress = options.ApiUrl;
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
 });
 builder.Services.AddQuartz(options =>
 {

@@ -10,7 +10,6 @@ namespace VRAtlas.Services;
 
 public interface IAuthService
 {
-    Task AssignRolesAsync(string userId, IEnumerable<string> roles);
     Task<UserTokens?> GetUserTokensAsync(string code, string redirectUri); 
 }
 
@@ -30,52 +29,6 @@ public class AuthService : IAuthService
         _atlasLogger = atlasLogger;
         _auth0Options = auth0Options;
         _httpClientFactory = httpClientFactory;
-    }
-
-    public async Task AssignRolesAsync(string userId, IEnumerable<string> roles)
-    {
-        await EnsureAuthTokenExists();
-
-        var client = _httpClientFactory.CreateClient("Auth0");
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
-        var response = await client.PostAsJsonAsync($"api/v2/users/{userId}/roles", new
-        {
-            roles
-        });
-
-        response.EnsureSuccessStatusCode();
-    }
-
-    private async Task EnsureAuthTokenExists()
-    {
-        if (_timeUntilRefresh > _clock.GetCurrentInstant())
-            return;
-
-        var options = _auth0Options.Value;
-        var client = _httpClientFactory.CreateClient("Auth0");
-
-        _atlasLogger.LogInformation("Starting client credential request");
-
-        var response = await client.PostAsync("oauth/token", new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("audience", options.Audience),
-            new KeyValuePair<string, string>("client_id", options.ClientId),
-            new KeyValuePair<string, string>("grant_type", "client_credentials"),
-            new KeyValuePair<string, string>("client_secret", options.ClientSecret),
-        }));
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            _atlasLogger.LogCritical("Failed to receive client credential grant from Auth0, {StatusCode}", response.StatusCode);
-            throw new InvalidOperationException($"Failed to receive oauth client credential grant from Auth0: {response.StatusCode}");
-        }
-
-        _atlasLogger.LogInformation("Successfully performed credential request");
-
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
-        var time = _clock.GetCurrentInstant() + Duration.FromSeconds(tokenResponse!.ExpiresInSeconds);
-        _accessToken = tokenResponse!.AccessToken;
-        _timeUntilRefresh = time;
     }
 
     public async Task<UserTokens?> GetUserTokensAsync(string code, string redirectUri)

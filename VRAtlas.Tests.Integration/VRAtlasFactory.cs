@@ -2,14 +2,17 @@
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using VRAtlas.Authorization;
 using VRAtlas.Options;
 using VRAtlas.Tests.Integration.Servers;
 using Xunit;
@@ -86,6 +89,8 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 options.DefaultAuthenticateScheme = "Test";
                 options.DefaultChallengeScheme = "Test";
             }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
+
+            services.Remove(services.First(s => s.ImplementationType == typeof(HasPermissionHandler)));
         });
     }
     public async Task InitializeAsync()

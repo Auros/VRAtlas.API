@@ -9,7 +9,7 @@ internal class CloudflareApiServer : ApiServer
     public void Configure(string accountHash)
     {
         Server.Given(Request.Create()
-            .WithPath($"/client/v4/accounts/{accountHash}/images/v2/direct_upload")
+            .WithPath($"/images/v2/direct_upload")
             .UsingPost())
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)
@@ -23,7 +23,7 @@ internal class CloudflareApiServer : ApiServer
                 """));
 
         Server.Given(Request.Create()
-            .WithPath($"/client/v4/accounts/{accountHash}/images/v1")
+            .WithPath($"/images/v1")
             .UsingPost())
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)

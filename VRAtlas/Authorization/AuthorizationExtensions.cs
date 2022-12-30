@@ -4,9 +4,9 @@ namespace VRAtlas.Authorization;
 
 public static class AuthorizationExtensions
 {
-    public static void AddScopes(this AuthorizationOptions options, string domain, params string[] scopes)
+    public static void AddPermissions(this AuthorizationOptions options, string domain, params string[] permissions)
     {
-        foreach (var scope in scopes)
-            options.AddPolicy(scope, policy => policy.Requirements.Add(new HasScopeRequirement(scope, domain)));
+        foreach (var permission in permissions)
+            options.AddPolicy(permission, policy => policy.Requirements.Add(new HasPermissionRequirement(permission, domain)));
     }
 }

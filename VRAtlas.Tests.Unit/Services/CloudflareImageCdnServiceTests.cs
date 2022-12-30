@@ -3,7 +3,6 @@ using MockHttpClient;
 using NSubstitute;
 using System.Net;
 using VRAtlas.Logging;
-using VRAtlas.Models;
 using VRAtlas.Services;
 using Xunit;
 
@@ -21,7 +20,7 @@ public class CloudflareImageCdnServiceTests
 	}
 
     [Fact]
-    public async Task GetUploadUriAsync_Successful()
+    public async Task GetUploadUriAsync_ShouldReturnUri_WhenGivenValidUrl()
     {
         // Arrange
         Guid userId = Guid.NewGuid();
@@ -44,7 +43,7 @@ public class CloudflareImageCdnServiceTests
     }
 
     [Fact]
-    public async Task GetUploadUriAsync_Failed()
+    public async Task GetUploadUriAsync_ShouldThrow_WhenFailed()
     {
         // Arrange
         Guid userId = Guid.NewGuid();
@@ -63,7 +62,7 @@ public class CloudflareImageCdnServiceTests
     }
 
     [Fact]
-    public async Task UploadAsync_Successful()
+    public async Task UploadAsync_ShouldReturnResourceId_WhenGivenValidResourceId()
     {
         // Arrange
         Guid expectedResourceId = Guid.NewGuid();
@@ -86,7 +85,7 @@ public class CloudflareImageCdnServiceTests
     }
 
     [Fact]
-    public async Task UploadAsync_Failed()
+    public async Task UploadAsync_ShouldThrow_WhenFailed()
     {
         // Arrange
         Guid expectedResourceId = Guid.NewGuid();
@@ -103,5 +102,51 @@ public class CloudflareImageCdnServiceTests
         _atlasLogger.Received(1).LogInformation(Arg.Is("Uploading {ImageUrl} to Cloudflare"), Arg.Is(source));
         _atlasLogger.Received(1).LogInformation(Arg.Is("Uploading to Cloudflare via Url Upload"));
         _atlasLogger.Received(1).LogCritical(Arg.Is("Failed to upload image {Source} from url, {StatusCode}"), Arg.Is(source), Arg.Is(HttpStatusCode.BadRequest));
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ShouldBeSuccessful_WhenGivenValidResourceId()
+    {
+        // Arrange
+        Guid? uploaderId = null;
+        Guid expectedResourceId = Guid.NewGuid();
+        Uri source = new("https://my.stuff.com/image.png");
+        MockHttpClient.MockHttpClient mockClient = new() { BaseAddress = new Uri("https://localhost") };
+        _httpClientFactory.CreateClient("Cloudflare").Returns(mockClient);
+        mockClient.When($"/images/v1/{expectedResourceId}").Then(_ => new HttpResponseMessage().WithJsonContent(new
+        {
+            result = new { id = expectedResourceId }
+        }));
+
+        // Act
+        var isValid = await _sut.ValidateAsync(expectedResourceId, null);
+
+        // Assert
+        isValid.Should().BeTrue();
+        _atlasLogger.Received(1).LogDebug(Arg.Is("Starting image validation for upload {UploadId} and uploader {UploaderId}"), Arg.Is(expectedResourceId), Arg.Is(uploaderId));
+        _atlasLogger.Received(1).LogDebug(Arg.Is("Successfuly validated the image {UploadId}"), Arg.Is(expectedResourceId));
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ShouldBeSuccessful_WhenGivenValidResourceAndUserId()
+    {
+        // Arrange
+        Guid? uploaderId = Guid.NewGuid();
+        Guid expectedResourceId = Guid.NewGuid();
+        Uri source = new("https://my.stuff.com/image.png");
+        MockHttpClient.MockHttpClient mockClient = new() { BaseAddress = new Uri("https://localhost") };
+        _httpClientFactory.CreateClient("Cloudflare").Returns(mockClient);
+        mockClient.When($"/images/v1/{expectedResourceId}").Then(_ => new HttpResponseMessage().WithJsonContent(new
+        {
+            result = new { id = expectedResourceId, meta = new { uploaderId } }
+        }));
+
+        // Act
+        var isValid = await _sut.ValidateAsync(expectedResourceId, uploaderId);
+
+        // Assert
+        isValid.Should().BeTrue();
+        _atlasLogger.Received(1).LogDebug(Arg.Is("Starting image validation for upload {UploadId} and uploader {UploaderId}"), Arg.Is(expectedResourceId), Arg.Is(uploaderId));
+        _atlasLogger.Received(1).LogDebug(Arg.Is("Successfuly validated the image {UploadId}"), Arg.Is(expectedResourceId));
     }
 }

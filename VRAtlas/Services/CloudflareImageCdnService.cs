@@ -120,10 +120,10 @@ public class CloudflareImageCdnService : IImageCdnService
         // If an uploader id was provided, ensure that it was this id that uploaded the original image.
         if (uploaderId.HasValue)
         {
-            var body = await response.Content.ReadFromJsonAsync<CloudflareResult<ValidationMeta>>();
-            if (body!.Result.UploaderId != uploaderId.Value)
+            var body = await response.Content.ReadFromJsonAsync<CloudflareResult<ValidateUrlResult>>();
+            if (body!.Result.Meta.UploaderId != uploaderId.Value)
             {
-                _atlasLogger.LogWarning("Uploader {UploaderId} tried to validate against an image uploaded by {TrueUploaderId}", body!.Result.UploaderId);
+                _atlasLogger.LogWarning("Uploader {UploaderId} tried to validate against an image uploaded by {TrueUploaderId}", body!.Result.Meta.UploaderId);
                 return false;
             }
         }

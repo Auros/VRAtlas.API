@@ -29,5 +29,10 @@ public class AtlasLogger<T> : IAtlasLogger<T>
     {
         _logger.LogDebug(message, args);
     }
+
+    public void LogError(string? message, params object?[] args)
+    {
+        _logger.LogError(message, args);
+    }
 }
 #pragma warning restore CA2254 // Template should be a static expression

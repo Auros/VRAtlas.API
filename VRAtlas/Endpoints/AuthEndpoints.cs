@@ -11,7 +11,8 @@ public class AuthEndpoints : IEndpointCollection
     {
         app.MapGet("/auth/token", GetUserToken)
             .Produces<UserTokens>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithTags("Auth");
     }
 
     private static async Task<IResult> GetUserToken([FromQuery] string code, [FromQuery] Uri redirectUri, IAuthService authService, IUserGrantService userGrantService)

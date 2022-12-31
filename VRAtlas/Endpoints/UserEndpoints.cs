@@ -12,11 +12,13 @@ public class UserEndpoints : IEndpointCollection
         app.MapGet("/user/@me", GetAuthUser)
             .RequireAuthorization()
             .Produces<User>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .WithTags("Users");
 
         app.MapGet("/user/{id:guid}", GetUserById)
             .Produces<User>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithTags("Users");
     }
 
     private static async Task<IResult> GetAuthUser(IUserService userService, ClaimsPrincipal principal)

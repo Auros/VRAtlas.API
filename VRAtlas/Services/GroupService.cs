@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 using VRAtlas.Logging;
 using VRAtlas.Models;
 
@@ -57,6 +55,13 @@ public interface IGroupService
     /// <param name="id">The id of the group.</param>
     /// <returns>Returns true if the group exists.</returns>
     Task<bool> GroupExistsAsync(Guid id);
+
+    /// <summary>
+    /// Checks if a group exists by its name.
+    /// </summary>
+    /// <param name="name">The name of the group.</param>
+    /// <returns>Returns true if the group exists.</returns>
+    Task<bool> GroupExistsByNameAsync(string name);
 
     /// <summary>
     /// Gets a user's role in a specific group.
@@ -134,7 +139,7 @@ public class GroupService : IGroupService
     public async Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid ownerId)
     {
         // Ensure that the group name is unique.
-        var groupNameExists = await _atlasContext.Groups.AnyAsync(g => g.Name == name);
+        var groupNameExists = await _atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == name.ToLower());
         if (groupNameExists)
         {
             _atlasLogger.LogWarning("A group creation event was attempted with an already existing name of {GroupName}", name);
@@ -220,6 +225,11 @@ public class GroupService : IGroupService
     public Task<bool> GroupExistsAsync(Guid id)
     {
         return _atlasContext.Groups.AnyAsync(g => g.Id == id);
+    }
+
+    public Task<bool> GroupExistsByNameAsync(string name)
+    {
+        return _atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == name.ToLower());
     }
 
     public async Task<Group> RemoveGroupMemberAsync(Guid id, Guid userId)

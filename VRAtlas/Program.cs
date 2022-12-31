@@ -60,6 +60,7 @@ builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOpt
 
 // Other registration
 builder.Services.AddVRAtlasEndpoints();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {

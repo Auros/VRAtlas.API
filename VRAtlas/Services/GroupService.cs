@@ -69,7 +69,17 @@ public interface IGroupService
     /// <param name="id">The id of the group.</param>
     /// <param name="userId">The id of the user.</param>
     /// <returns>The role of the group member. If they are not in the group, null.</returns>
-    Task<GroupMemberRole?> GetGroupMemberRole(Guid id, Guid userId);
+    Task<GroupMemberRole?> GetGroupMemberRoleAsync(Guid id, Guid userId);
+
+    /// <summary>
+    /// Modifies an existing group
+    /// </summary>
+    /// <param name="id">The id of the group.</param>
+    /// <param name="description">The description of the group.</param>
+    /// <param name="icon">The id of the group icon resource.</param>
+    /// <param name="banner">The id of the group banner resource.</param>
+    /// <returns>The updated group.</returns>
+    Task<Group> ModifyGroupAsync(Guid id, string description, Guid icon, Guid banner);
 }
 
 public class GroupService : IGroupService
@@ -106,10 +116,7 @@ public class GroupService : IGroupService
             // The member is not in the group.
             var user = await _userService.GetUserAsync(userId);
             if (user is null)
-            {
-                _atlasLogger.LogWarning("A group member edit was attempted on the group {GroupId}, but the user {UserId} does not exist", id, userId);
-                throw new InvalidOperationException($"A user with the id '{userId}' does not exist.");
-            }
+                return group; // Return the group as is, like there were no changes.
 
             // Create the new group member object
             var now = _clock.GetCurrentInstant();
@@ -133,6 +140,7 @@ public class GroupService : IGroupService
         }
 
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} was added to group {GroupId}", userId, id);
         return group;
     }
 
@@ -180,6 +188,7 @@ public class GroupService : IGroupService
 
         _atlasContext.Groups.Add(group);
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} created group {GroupId}", ownerId, group.Id);
         return group;
     }
 
@@ -212,7 +221,7 @@ public class GroupService : IGroupService
             .FirstOrDefaultAsync();
     }
 
-    public async Task<GroupMemberRole?> GetGroupMemberRole(Guid id, Guid userId)
+    public async Task<GroupMemberRole?> GetGroupMemberRoleAsync(Guid id, Guid userId)
     {
         // Unfortunately, we need to return the GroupMember here as we cannot return a nullable value type within the query in this context.
         var member = await _atlasContext.Groups
@@ -230,6 +239,26 @@ public class GroupService : IGroupService
     public Task<bool> GroupExistsByNameAsync(string name)
     {
         return _atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == name.ToLower());
+    }
+
+    public async Task<Group> ModifyGroupAsync(Guid id, string description, Guid icon, Guid banner)
+    {
+        var group = await _atlasContext.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            _atlasLogger.LogWarning("Tried to modify a group that does not exist, {GroupId}", id);
+            throw new InvalidOperationException($"Could not find group with id '{id}'.");
+        }
+
+        group.Icon = icon;
+        group.Banner = banner;
+        group.Description = description;
+
+        await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Group {GroupId} was updated", id);
+
+        // We don't return the group object above since we never loaded the group members in the query.
+        return (await GetGroupByIdAsync(group.Id))!;
     }
 
     public async Task<Group> RemoveGroupMemberAsync(Guid id, Guid userId)
@@ -250,8 +279,9 @@ public class GroupService : IGroupService
         
         if (member is not null)
             group.Members.Remove(member);
-        
+
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} was removed from group {GroupId}", userId, id);
         return group;
     }
 }

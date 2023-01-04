@@ -14,7 +14,7 @@ public class Group
     public string Description { get; set; } = null!;
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public List<GroupMember> Members { get; set; } = null!;
+    public IList<GroupMember> Members { get; set; } = null!;
 
     public Guid Icon { get; set; }
 

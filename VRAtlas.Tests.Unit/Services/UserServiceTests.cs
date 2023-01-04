@@ -1,8 +1,5 @@
 ﻿using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using NodaTime;
 using System.Security.Claims;
-using VRAtlas.Models;
 using VRAtlas.Services;
 using Xunit;
 

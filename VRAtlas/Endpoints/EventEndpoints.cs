@@ -15,6 +15,10 @@ public class EventEndpoints : IEndpointCollection
         app.MapGet("/events", GetEvents)
             .Produces<PaginatedEventQuery>(StatusCodes.Status200OK)
             .WithTags("Events");
+
+        app.MapPost("/event", CreateEvent)
+            .Produces(StatusCodes.Status201Created)
+            .WithTags("Events");
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)
@@ -33,6 +37,11 @@ public class EventEndpoints : IEndpointCollection
             Cursor = cursor
         });
         return Results.Ok(new PaginatedEventQuery(events, nextCursor, previousCursor));
+    }
+
+    public static Task<IResult> CreateEvent(IEventService eventService)
+    {
+        throw new NotImplementedException();
     }
 
     public record class PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);

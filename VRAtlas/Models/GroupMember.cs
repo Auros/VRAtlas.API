@@ -10,6 +10,10 @@ public class GroupMember
     public Guid Id { get; set; }
 
     [Required]
+    [JsonIgnore]
+    public Group? Group { get; set; }
+
+    [Required]
     public User? User { get; set; }
 
     public GroupMemberRole Role { get; set; }

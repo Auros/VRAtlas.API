@@ -97,51 +97,13 @@ public class GroupService : IGroupService
         _atlasContext = atlasContext;
     }
 
-    public async Task<Group> AddGroupMemberAsync(Guid id, Guid userId, GroupMemberRole role)
+    public Task<Group?> GetGroupByIdAsync(Guid id)
     {
-        if (role == GroupMemberRole.Owner)
-            throw new InvalidOperationException("Cannot add or modify a member to the Owner role");
-
-        var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(g => g.User).FirstOrDefaultAsync(g => g.Id == id);
-        if (group is null)
-        {
-            _atlasLogger.LogWarning("Tried to modify a group member {UserId} in a group that doesn't exist {GroupId}", userId, id);
-            throw new InvalidOperationException($"Could not find group with id '{id}'.");
-        }
-
-        // Check if the member is in the group already.
-        var member = group.Members.FirstOrDefault(m => m.User!.Id == userId);
-        if (member is null)
-        {
-            // The member is not in the group.
-            var user = await _userService.GetUserAsync(userId);
-            if (user is null)
-                return group; // Return the group as is, like there were no changes.
-
-            // Create the new group member object
-            var now = _clock.GetCurrentInstant();
-            group.Members.Add(new()
-            {
-                Id = userId,
-                User = user,
-                Role = role,
-                JoinedAt = now
-            });
-        }
-        else
-        {
-            // The member is in the group.
-            // Ensure we're not removing the owner
-            if (member.Role is GroupMemberRole.Owner)
-                throw new InvalidOperationException("Cannot modify the role of the group owner.");
-
-            // Update the role
-            member.Role = role;
-        }
-
-        await _atlasContext.SaveChangesAsync();
-        _atlasLogger.LogInformation("User {UserId} was added to group {GroupId}", userId, id);
-        return group;
+        return _atlasContext.Groups
+            .AsNoTracking()
+            .Include(g => g.Members)
+                .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(g => g.Id == id);
     }
 
     public async Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid ownerId)
@@ -174,7 +136,7 @@ public class GroupService : IGroupService
             Icon = icon,
             Banner = banner,
             CreatedAt = now,
-            Members = new()
+            Members = new List<GroupMember>()
             {
                 new GroupMember
                 {
@@ -192,33 +154,83 @@ public class GroupService : IGroupService
         return group;
     }
 
-    public async Task<IEnumerable<Group>> GetAllUserGroupsAsync(Guid userId)
+    public async Task<Group> AddGroupMemberAsync(Guid id, Guid userId, GroupMemberRole role)
     {
-        var groups = await _atlasContext.Groups
-            .AsNoTracking()
-            .Where(g => g.Members.Any(m => m.User!.Id == userId))
-            .Include(g => g.Members)
-                .ThenInclude(m => m.User)
-            .ToListAsync();
+        if (role == GroupMemberRole.Owner)
+            throw new InvalidOperationException("Cannot add or modify a member to the Owner role");
 
-        // Sort the groups to have the groups owned by the user first, then the groups they manage, then the groups they're just in.
-        groups.Sort((groupA, groupB) =>
+        var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(g => g.User).FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
         {
-            var roleInGroupA = groupA.Members.First(m => m.User!.Id == userId).Role;
-            var roleInGroupB = groupB.Members.First(m => m.User!.Id == userId).Role;
-            return roleInGroupB - roleInGroupA;
-        });
+            _atlasLogger.LogWarning("Tried to modify a group member {UserId} in a group that doesn't exist {GroupId}", userId, id);
+            throw new InvalidOperationException($"Could not find group with id '{id}'.");
+        }
 
-        return groups;
+        // Check if the member is in the group already.
+        var member = group.Members.FirstOrDefault(m => m.User!.Id == userId);
+        if (member is null)
+        {
+            var user = await _userService.GetUserAsync(userId);
+            // The member is not in the group.
+            if (user is null)
+                return group; // Return the group as is, like there were no changes.
+
+            // Create the new group member object
+            var now = _clock.GetCurrentInstant();
+            member = new()
+            {
+                Id = Guid.NewGuid(),
+                User = user,
+                Role = role,
+                JoinedAt = now,
+                Group = group,
+            };
+
+            group.Members.Add(member);
+            _atlasContext.GroupMembers.Add(member);
+            await _atlasContext.SaveChangesAsync();
+        }
+        else
+        {
+            // The member is in the group.
+            // Ensure we're not removing the owner
+            if (member.Role is GroupMemberRole.Owner)
+                throw new InvalidOperationException("Cannot modify the role of the group owner.");
+
+            // Update the role
+            member.Role = role;
+            await _atlasContext.SaveChangesAsync();
+        }
+
+        _atlasLogger.LogInformation("User {UserId} was added to group {GroupId}", userId, id);
+        return group;
     }
 
-    public Task<Group?> GetGroupByIdAsync(Guid id)
+    public async Task<Group> RemoveGroupMemberAsync(Guid id, Guid userId)
     {
-        return _atlasContext.Groups
-            .AsNoTracking()
-            .Include(g => g.Members)
-                .ThenInclude(m => m.User)
-            .FirstOrDefaultAsync();
+        var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(g => g.User).FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            _atlasLogger.LogWarning("Tried to remove a group member {UserId} in a group that doesn't exist {GroupId}", userId, id);
+            throw new InvalidOperationException($"Could not find group with id '{id}'.");
+        }
+
+        var member = group.Members.FirstOrDefault(m => m.User!.Id == userId);
+        if (member?.Role == GroupMemberRole.Owner)
+        {
+            _atlasLogger.LogWarning("Tried to remove the owner from the group {GroupId}", id);
+            throw new InvalidOperationException("Cannot remove a member with the Owner role");
+        }
+
+        if (member is not null)
+        {
+            group.Members.Remove(member);
+            _atlasContext.GroupMembers.Remove(member);
+        }    
+
+        await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} was removed from group {GroupId}", userId, id);
+        return group;
     }
 
     public async Task<GroupMemberRole?> GetGroupMemberRoleAsync(Guid id, Guid userId)
@@ -241,6 +253,26 @@ public class GroupService : IGroupService
         return _atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == name.ToLower());
     }
 
+    public async Task<IEnumerable<Group>> GetAllUserGroupsAsync(Guid userId)
+    {
+        var groups = await _atlasContext.Groups
+            .AsNoTracking()
+            .Where(g => g.Members.Any(m => m.User!.Id == userId))
+            .Include(g => g.Members)
+                .ThenInclude(m => m.User)
+            .ToListAsync();
+
+        // Sort the groups to have the groups owned by the user first, then the groups they manage, then the groups they're just in.
+        groups.Sort((groupA, groupB) =>
+        {
+            var roleInGroupA = groupA.Members.First(m => m.User!.Id == userId).Role;
+            var roleInGroupB = groupB.Members.First(m => m.User!.Id == userId).Role;
+            return roleInGroupB - roleInGroupA;
+        });
+
+        return groups;
+    }
+
     public async Task<Group> ModifyGroupAsync(Guid id, string description, Guid icon, Guid banner)
     {
         var group = await _atlasContext.Groups.FirstOrDefaultAsync(g => g.Id == id);
@@ -259,29 +291,5 @@ public class GroupService : IGroupService
 
         // We don't return the group object above since we never loaded the group members in the query.
         return (await GetGroupByIdAsync(group.Id))!;
-    }
-
-    public async Task<Group> RemoveGroupMemberAsync(Guid id, Guid userId)
-    {
-        var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(g => g.User).FirstOrDefaultAsync(g => g.Id == id);
-        if (group is null)
-        {
-            _atlasLogger.LogWarning("Tried to remove a group member {UserId} in a group that doesn't exist {GroupId}", userId, id);
-            throw new InvalidOperationException($"Could not find group with id '{id}'.");
-        }
-
-        var member = group.Members.FirstOrDefault(m => m.User!.Id == userId);
-        if (member?.Role == GroupMemberRole.Owner)
-        {
-            _atlasLogger.LogWarning("Tried to remove the owner from the group {GroupId}", id);
-            throw new InvalidOperationException("Cannot add or modify a member to the Owner role");
-        }
-        
-        if (member is not null)
-            group.Members.Remove(member);
-
-        await _atlasContext.SaveChangesAsync();
-        _atlasLogger.LogInformation("User {UserId} was removed from group {GroupId}", userId, id);
-        return group;
     }
 }

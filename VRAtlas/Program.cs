@@ -94,7 +94,10 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPermissions(auth0.Domain, new string[]
     {
-        "read:upload_url"
+        "create:upload_url",
+        "create:groups",
+        "update:groups",
+
     });
 });
 builder.Services.AddHttpClient("Auth0", (container, client) =>

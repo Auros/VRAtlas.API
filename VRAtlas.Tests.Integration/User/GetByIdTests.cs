@@ -20,11 +20,11 @@ public class GetByIdTests : IClassFixture<VRAtlasFactory>
         // Arrange
         var accessToken = await _httpClient.LoginDefaultTestUser();
 
-        var userMsg = TestConstants.CreateHttpMessage("user/@me", accessToken, HttpMethod.Get);
+        var userMsg = TestConstants.CreateHttpMessage("users/@me", accessToken, HttpMethod.Get);
         var expectedUser = (await (await _httpClient.SendAsync(userMsg)).Content.ReadFromJsonAsync<Models.User>())!;
 
         // Act
-        using var response = await _httpClient.GetAsync($"user/{expectedUser.Id}");
+        using var response = await _httpClient.GetAsync($"users/{expectedUser.Id}");
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
@@ -39,7 +39,7 @@ public class GetByIdTests : IClassFixture<VRAtlasFactory>
     public async Task GetById_ShouldReturnNull_WithNonExistantId()
     {
         // Act
-        using var response = await _httpClient.GetAsync($"user/{Guid.NewGuid()}");
+        using var response = await _httpClient.GetAsync($"users/{Guid.NewGuid()}");
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);

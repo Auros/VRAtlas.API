@@ -27,7 +27,7 @@ public class GetMeTests : IClassFixture<VRAtlasFactory>
 
         var msg = new HttpRequestMessage
         {
-            RequestUri = new Uri("user/@me", UriKind.Relative),
+            RequestUri = new Uri("users/@me", UriKind.Relative),
             Method = HttpMethod.Get
         };
         msg.Headers.Authorization = new AuthenticationHeaderValue("Test", validAccessToken);
@@ -56,7 +56,7 @@ public class GetMeTests : IClassFixture<VRAtlasFactory>
 
         var msg = new HttpRequestMessage
         {
-            RequestUri = new Uri("user/@me", UriKind.Relative),
+            RequestUri = new Uri("users/@me", UriKind.Relative),
             Method = HttpMethod.Get
         };
         msg.Headers.Authorization = new AuthenticationHeaderValue("Test", "a really not valid auth header");
@@ -77,7 +77,7 @@ public class GetMeTests : IClassFixture<VRAtlasFactory>
         // Arrange
         var msg = new HttpRequestMessage
         {
-            RequestUri = new Uri("user/@me", UriKind.Relative),
+            RequestUri = new Uri("users/@me", UriKind.Relative),
             Method = HttpMethod.Get
         };
         msg.Headers.Authorization = new AuthenticationHeaderValue("Test", "valid.no-exist");
@@ -101,7 +101,7 @@ public class GetMeTests : IClassFixture<VRAtlasFactory>
         using var _ = await _httpClient.GetAsync($"auth/token?code={escape(code)}&redirectUri={redirectUri}");
 
         // Act
-        using var response = await _httpClient.GetAsync("user/@me");
+        using var response = await _httpClient.GetAsync("users/@me");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

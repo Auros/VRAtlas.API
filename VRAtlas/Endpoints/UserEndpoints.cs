@@ -9,16 +9,17 @@ public class UserEndpoints : IEndpointCollection
 {
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("/user/@me", GetAuthUser)
-            .RequireAuthorization()
+        var group = app.MapGroup("/user");
+        group.WithTags("Users");
+
+        group.MapGet("/user/@me", GetAuthUser)
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .WithTags("Users");
+            .RequireAuthorization();
 
-        app.MapGet("/user/{id:guid}", GetUserById)
+        group.MapGet("/user/{id:guid}", GetUserById)
             .Produces<User>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .WithTags("Users");
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> GetAuthUser(IUserService userService, ClaimsPrincipal principal)

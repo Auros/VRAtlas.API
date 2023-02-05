@@ -8,17 +8,17 @@ public class EventEndpoints : IEndpointCollection
 {
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("/event/{id:guid}", GetEventById)
-            .Produces<Event>(StatusCodes.Status200OK)
-            .WithTags("Events");
+        var group = app.MapGroup("/events");
+        group.WithTags("Events");
 
-        app.MapGet("/events", GetEvents)
-            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK)
-            .WithTags("Events");
+        group.MapGet("/{id:guid}", GetEventById)
+            .Produces<Event>(StatusCodes.Status200OK);
 
-        app.MapPost("/event", CreateEvent)
-            .Produces(StatusCodes.Status201Created)
-            .WithTags("Events");
+        group.MapGet("/", GetEvents)
+            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK);
+
+        group.MapPost("/", CreateEvent)
+            .Produces(StatusCodes.Status201Created);
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)

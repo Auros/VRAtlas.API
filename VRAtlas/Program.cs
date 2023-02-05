@@ -37,6 +37,7 @@ var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options
 var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>()!;
 
 // Service registration
+builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IGroupService, GroupService>();

@@ -18,18 +18,19 @@ public class Event
     public Group? Owner { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<EventStar>? Stars { get; set; }
+    public List<EventStar> Stars { get; set; } = null!;
 
     public EventStatus Status { get; set; }
 
-    public Instant StartTime { get; set; }
+    public Instant? StartTime { get; set; }
 
-    public Instant EndTime { get; set; }
+    public Instant? EndTime { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<Tag>? Tags { get; set; }
+    public List<EventTag> Tags { get; set; } = null!;
 
     public Guid Media { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RSVP? RSVP { get; set; }
 }

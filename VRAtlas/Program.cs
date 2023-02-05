@@ -13,7 +13,6 @@ using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
-using Swashbuckle.AspNetCore.Filters;
 using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Reflection;

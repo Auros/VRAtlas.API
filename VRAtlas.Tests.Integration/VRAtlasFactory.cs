@@ -2,13 +2,11 @@
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -38,7 +36,11 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         _auth0ApiServer = new Auth0ApiServer();
         _cloudflareApiServer = new CloudflareApiServer();
 
-        _mainDatabaseContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
+        // Currently, there is a big refactor/migration going on with Testcontainers modules, so the warnings are suppressed:
+        // https://github.com/testcontainers/testcontainers-dotnet/issues/750
+
+#pragma warning disable 618
+        _mainDatabaseContainer = new ContainerBuilder<PostgreSqlTestcontainer>()
             .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:latest")
             {
                 Database = "vratlas_tests",
@@ -47,7 +49,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
             })
             .Build();
 
-        _quartzDatabaseContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
+        _quartzDatabaseContainer = new ContainerBuilder<PostgreSqlTestcontainer>()
             .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:latest")
             {
                 Database = "vratlas_job_store_tests",
@@ -55,6 +57,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 Password = nameof(VRAtlas),
             })
             .Build();
+#pragma warning restore 618
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

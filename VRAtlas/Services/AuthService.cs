@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
 using NodaTime;
-using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using VRAtlas.Logging;
 using VRAtlas.Models;
@@ -15,17 +14,12 @@ public interface IAuthService
 
 public class AuthService : IAuthService
 {
-    private Instant _timeUntilRefresh;
-    private string _accessToken = string.Empty;
-
-    private readonly IClock _clock;
     private readonly IAtlasLogger _atlasLogger;
     private readonly IOptions<Auth0Options> _auth0Options;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public AuthService(IClock clock, IAtlasLogger<AuthService> atlasLogger, IOptions<Auth0Options> auth0Options, IHttpClientFactory httpClientFactory)
     {
-        _clock = clock;
         _atlasLogger = atlasLogger;
         _auth0Options = auth0Options;
         _httpClientFactory = httpClientFactory;

@@ -1,9 +1,11 @@
 ﻿using NodaTime;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
+[DisplayName("Group Member")]
 public class GroupMember
 {
     [JsonIgnore]

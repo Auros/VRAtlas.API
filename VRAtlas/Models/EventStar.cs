@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace VRAtlas.Models;
 
+[DisplayName("Event Star")]
 public class EventStar
 {
     [JsonIgnore]

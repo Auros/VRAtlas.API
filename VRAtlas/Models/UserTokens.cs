@@ -1,7 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
+[DisplayName("User Tokens")]
 public class UserTokens
 {
     [JsonPropertyName("idToken")]

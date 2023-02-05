@@ -9,15 +9,15 @@ public class UserEndpoints : IEndpointCollection
 {
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/user");
+        var group = app.MapGroup("/users");
         group.WithTags("Users");
 
-        group.MapGet("/user/@me", GetAuthUser)
+        group.MapGet("/@me", GetAuthUser)
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
 
-        group.MapGet("/user/{id:guid}", GetUserById)
+        group.MapGet("/{id:guid}", GetUserById)
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
     }

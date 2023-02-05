@@ -7,18 +7,23 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
+using Swashbuckle.AspNetCore.Filters;
+using System.ComponentModel;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using VRAtlas;
 using VRAtlas.Authorization;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Logging;
+using VRAtlas.Models;
 using VRAtlas.Options;
 using VRAtlas.Services;
 
@@ -70,7 +75,43 @@ builder.Services.AddDbContext<AtlasContext>((container, options) =>
 });
 builder.Services.AddSwaggerGen(options =>
 {
+    // TODO: Move into separate file
+    options.CustomSchemaIds(selector =>
+    {
+        // Since we're using the DisplayName attribute, we need to map the enums separately.
+        // TODO: Switch to using a custom attribute that supports enums
+        if (selector.IsEnum)
+        {
+            if (selector == typeof(EventStatus))
+                return "Event Status";
+
+            if (selector == typeof(EventStarStatus))
+                return "Event Star Status";
+
+            if (selector == typeof(GroupMemberRole))
+                return "Group Membmer Role";
+        }
+        return selector.GetCustomAttributes<DisplayNameAttribute>().FirstOrDefault()?.DisplayName ?? selector.Name;
+    });
     options.ConfigureForNodaTimeWithSystemTextJson();
+
+    OpenApiSecurityScheme securityScheme = new()
+    {
+        BearerFormat = "JWT",
+        Name = "JWT Authentication",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        Description = "Specify JWT Bearer for authenticated requests",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    options.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement { { securityScheme, Array.Empty<string>() } });
 });
 builder.Services.AddLogging(options =>
 {

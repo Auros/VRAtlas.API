@@ -1,4 +1,5 @@
-﻿using VRAtlas.Endpoints.Internal;
+﻿using System.ComponentModel;
+using VRAtlas.Endpoints.Internal;
 using VRAtlas.Models;
 using VRAtlas.Services;
 
@@ -6,6 +7,9 @@ namespace VRAtlas.Endpoints;
 
 public class EventEndpoints : IEndpointCollection
 {
+    [DisplayName("Paginated Event Query")]
+    public record class PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/events");
@@ -43,6 +47,4 @@ public class EventEndpoints : IEndpointCollection
     {
         throw new NotImplementedException();
     }
-
-    public record class PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
 }

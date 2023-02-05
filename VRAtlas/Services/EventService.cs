@@ -89,13 +89,11 @@ public class EventService : IEventService
 {
     private readonly ITagService _tagService;
     private readonly AtlasContext _atlasContext;
-    private readonly IGroupService _groupService;
 
-    public EventService(ITagService tagService, AtlasContext atlasContext, IGroupService groupService)
+    public EventService(ITagService tagService, AtlasContext atlasContext)
     {
         _tagService = tagService;
         _atlasContext = atlasContext;
-        _groupService = groupService;
     }
 
     public Task<Event?> GetEventByIdAsync(Guid id)
@@ -136,7 +134,10 @@ public class EventService : IEventService
         {
             var lastEvent = events[^1];
             events.Remove(lastEvent);
-            cursor = lastEvent.Id;
+
+            // If we're not at the very last element in the entire query search (oldest event), set the next page cursor indicating that there's more elements.
+            if (events.Count is not 0)
+                cursor = lastEvent.Id;
         }
 
         if (events.Count > 0)

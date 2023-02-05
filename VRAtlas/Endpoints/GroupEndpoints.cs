@@ -80,9 +80,9 @@ public class GroupEndpoints : IEndpointCollection
         return Results.Ok(group);
     }
 
-    private static async Task<IResult> GetUserGroups(Guid userId, IGroupService groupService)
+    private static async Task<IResult> GetUserGroups(Guid id, IGroupService groupService)
     {
-        var groups = await groupService.GetAllUserGroupsAsync(userId);
+        var groups = await groupService.GetAllUserGroupsAsync(id);
         return Results.Ok(groups);
     }
 
@@ -96,7 +96,7 @@ public class GroupEndpoints : IEndpointCollection
 
         var group = await groupService.CreateGroupAsync(name, description, icon, banner, user.Id);
 
-        return Results.Created($"/group/{group.Id}", group);
+        return Results.Created($"/groups/{group.Id}", group);
     }
 
     private static async Task<IResult> UpdateGroup(UpdateGroupBody body, IGroupService groupService, IUserService userService, ClaimsPrincipal principal)

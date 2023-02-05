@@ -117,7 +117,7 @@ public class GroupService : IGroupService
         }
 
         // Ensure that the owner attached to this group exists.
-        var owner = await _userService.GetUserAsync(ownerId);
+        var owner = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == ownerId);
         if (owner is null)
         {
             _atlasLogger.LogWarning("Unable to create a group, could not find the owning user");

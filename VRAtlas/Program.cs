@@ -138,6 +138,8 @@ builder.Services.AddAuthorization(options =>
         "create:upload_url",
         "create:groups",
         "update:groups",
+        "create:events",
+        "update:events",
 
     });
 });

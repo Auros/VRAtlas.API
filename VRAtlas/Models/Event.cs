@@ -15,6 +15,7 @@ public class Event
     public string Description { get; set; } = string.Empty;
 
     [Required]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Group? Owner { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

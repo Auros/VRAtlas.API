@@ -16,9 +16,16 @@ public class MutateGroupMemberBodyValidator : AbstractValidator<GroupEndpoints.M
         _groupService = groupService;
         _httpContextAccessor = httpContextAccessor;
 
-        RuleFor(x => x.UserId).NotEmpty().WithMessage("A user must be provided.");
-        RuleFor(x => x.Role).NotEqual(GroupMemberRole.Owner).WithMessage("Cannot set a member's role to owner.");
-        RuleFor(x => x.Id).NotEmpty().MustAsync(EnsureGroupExistsAsync).WithMessage("Group does not exist.").MustAsync(EnsureUserCanUpdateGroupAsync).WithMessage("Invalid group permissions.");
+        RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("A user must be provided.");
+
+        RuleFor(x => x.Role)
+            .NotEqual(GroupMemberRole.Owner).WithMessage("Cannot set a member's role to owner.");
+
+        RuleFor(x => x.Id)
+            .NotEmpty()
+            .MustAsync(EnsureGroupExistsAsync).WithMessage("Group does not exist.")
+            .MustAsync(EnsureUserCanUpdateGroupAsync).WithMessage("Invalid group permissions.");
     }
 
     private Task<bool> EnsureGroupExistsAsync(Guid id, CancellationToken _)

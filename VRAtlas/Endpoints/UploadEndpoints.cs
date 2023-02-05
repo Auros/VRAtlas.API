@@ -16,7 +16,7 @@ public class UploadEndpoints : IEndpointCollection
             .Produces<UploadUrlBody>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
-            .RequireAuthorization("read:upload_url")
+            .RequireAuthorization("create:upload_url")
             .WithTags("Upload");
     }
 

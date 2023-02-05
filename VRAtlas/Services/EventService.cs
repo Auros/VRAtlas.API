@@ -152,7 +152,7 @@ public class EventService : IEventService
 
     public async Task<Event> CreateEventAsync(string name, Guid ownerId, Guid mediaId)
     {
-        var group = await _groupService.GetGroupByIdAsync(ownerId) ?? throw new InvalidOperationException($"Group {ownerId} does not exist.");
+        var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(m => m.User).FirstOrDefaultAsync(g => g.Id == ownerId) ?? throw new InvalidOperationException($"Group {ownerId} does not exist.");
 
         Event atlasEvent = new()
         {

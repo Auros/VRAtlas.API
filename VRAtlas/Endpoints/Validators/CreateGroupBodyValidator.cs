@@ -17,15 +17,26 @@ public class CreateGroupBodyValidator : AbstractValidator<GroupEndpoints.CreateG
         _imageCdnService = imageCdnService;
         _httpContextAccessor = httpContextAccessor;
 
-        RuleFor(x => x.Description).NotNull().MaximumLength(1000);
-        RuleFor(x => x.Icon).NotEmpty().MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
-        RuleFor(x => x.Banner).NotEmpty().MustAsync(EnsureValidImageAsync).WithMessage("Invalid banner image resource id.");
-        RuleFor(x => x.Name).NotEmpty().MustAsync(EnsureUniqueNameAsync).WithMessage("A group with that name already exists.");
+        RuleFor(x => x.Description)
+            .NotNull()
+            .MaximumLength(1000);
+
+        RuleFor(x => x.Icon)
+            .NotEmpty()
+            .MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
+
+        RuleFor(x => x.Banner)
+            .NotEmpty()
+            .MustAsync(EnsureValidImageAsync).WithMessage("Invalid banner image resource id.");
+
+        RuleFor(x => x.Name)
+            .NotEmpty()
+            .MustAsync(EnsureUniqueNameAsync).WithMessage("A group with that name already exists.");
     }
 
-    private Task<bool> EnsureUniqueNameAsync(string name, CancellationToken _)
+    private async Task<bool> EnsureUniqueNameAsync(string name, CancellationToken _)
     {
-        return _groupService.GroupExistsByNameAsync(name);
+        return !await _groupService.GroupExistsByNameAsync(name);
     }
 
     private Task<bool> EnsureValidImageAsync(Guid resourceId, CancellationToken _)

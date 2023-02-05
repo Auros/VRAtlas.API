@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using FluentValidation;
+using System.ComponentModel;
 using VRAtlas.Endpoints.Internal;
+using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
 using VRAtlas.Services;
 
@@ -9,6 +11,9 @@ public class EventEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Event Query")]
     public record class PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
+
+    [DisplayName("Create Event (Body)")]
+    public record class CreateEventBody(string Name, Guid Group, Guid Media);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -23,6 +28,11 @@ public class EventEndpoints : IEndpointCollection
 
         group.MapPost("/", CreateEvent)
             .Produces(StatusCodes.Status201Created);
+    }
+
+    public static void AddServices(IServiceCollection services)
+    {
+        services.AddScoped<IValidator<CreateEventBody>, CreateEventBodyValidator>();
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)
@@ -43,8 +53,12 @@ public class EventEndpoints : IEndpointCollection
         return Results.Ok(new PaginatedEventQuery(events, nextCursor, previousCursor));
     }
 
-    public static Task<IResult> CreateEvent(IEventService eventService)
+    public static async Task<IResult> CreateEvent(CreateEventBody body, IEventService eventService)
     {
-        throw new NotImplementedException();
+        var (name, groupId, mediaId) = body;
+
+        var atlasEvent = await eventService.CreateEventAsync(name, groupId, mediaId);
+
+        return Results.Created($"/events/{atlasEvent.Id}", atlasEvent);
     }
 }

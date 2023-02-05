@@ -37,8 +37,8 @@ var logger = new LoggerConfiguration()
     .CreateLogger();
 Log.Logger = logger;
 
-var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>()!;
-var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>()!;
+var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>() ?? new Auth0Options { Audience = string.Empty, ClientId = string.Empty, ClientSecret = string.Empty, Domain = string.Empty };
+var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>() ?? new CloudflareOptions { ApiKey = string.Empty, ApiUrl = new Uri("http://localhost") };
 
 // Service registration
 builder.Services.AddScoped<ITagService, TagService>();

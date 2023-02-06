@@ -23,6 +23,9 @@ public class EventEndpoints : IEndpointCollection
     [DisplayName("Schedule Event (Body)")]
     public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant? EndTime);
 
+    [DisplayName("Upgrade Event Status (Body)")]
+    public record class UpgradeEventBody(Guid Id);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/events");
@@ -57,12 +60,48 @@ public class EventEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status403Forbidden)
             .RequireAuthorization("update:events")
             .AddValidationFilter<ScheduleEventBody>();
+
+        /* TODO: Return specific errors if the event is not in a valid state for these actions. */
+        /* With the valid inputs and permissions, it will respond with 204 even if nothing happens. */
+        group.MapPut("/announce", AnnounceEvent)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<UpgradeEventBody>();
+
+        group.MapPut("/start", StartEvent)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<UpgradeEventBody>();
+
+        group.MapPut("/conclude", ConcludeEvent)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<UpgradeEventBody>();
+
+        group.MapPut("/cancel", CancelEvent)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<UpgradeEventBody>();
+        /* End TODO */
     }
 
     public static void AddServices(IServiceCollection services)
     {
         services.AddScoped<IValidator<CreateEventBody>, CreateEventBodyValidator>();
         services.AddScoped<IValidator<UpdateEventBody>, UpdateEventBodyValidator>();
+        services.AddScoped<IValidator<UpgradeEventBody>, UpgradeEventBodyValidator>();
         services.AddScoped<IValidator<ScheduleEventBody>, ScheduleEventBodyValidator>();
     }
 
@@ -113,5 +152,29 @@ public class EventEndpoints : IEndpointCollection
         var atlasEvent = await eventService.ScheduleEventAsync(id, startTime, endTime);
 
         return Results.Ok(atlasEvent);
+    }
+
+    public static async Task<IResult> AnnounceEvent(UpgradeEventBody body, IEventService eventService)
+    {
+        await eventService.AnnounceEventAsync(body.Id);
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> StartEvent(UpgradeEventBody body, IEventService eventService)
+    {
+        await eventService.StartEventAsync(body.Id);
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> ConcludeEvent(UpgradeEventBody body, IEventService eventService)
+    {
+        await eventService.ConcludeEventAsync(body.Id);
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> CancelEvent(UpgradeEventBody body, IEventService eventService)
+    {
+        await eventService.CancelEventAsync(body.Id);
+        return Results.NoContent();
     }
 }

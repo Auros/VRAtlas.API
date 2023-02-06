@@ -99,34 +99,22 @@ public class GroupEndpoints : IEndpointCollection
         return Results.Created($"/groups/{group.Id}", group);
     }
 
-    private static async Task<IResult> UpdateGroup(UpdateGroupBody body, IGroupService groupService, IUserService userService, ClaimsPrincipal principal)
+    private static async Task<IResult> UpdateGroup(UpdateGroupBody body, IGroupService groupService, IUserService userService)
     {
-        var user = await userService.GetUserAsync(principal);
-        if (user is null)
-            return Results.Unauthorized();
-
         var (id, description, icon, banner) = body;
         var group = await groupService.ModifyGroupAsync(id, description, icon, banner);
         return Results.Ok(group);
     }
 
-    private static async Task<IResult> AddMemberToGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService, ClaimsPrincipal principal)
+    private static async Task<IResult> AddMemberToGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService)
     {
-        var user = await userService.GetUserAsync(principal);
-        if (user is null)
-            return Results.Unauthorized();
-
         var (id, userId, role) = body;
         var group = await groupService.AddGroupMemberAsync(id, userId, role ?? GroupMemberRole.Standard);
         return Results.Ok(group);
     }
 
-    private static async Task<IResult> RemoveMemberFromGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService, ClaimsPrincipal principal)
+    private static async Task<IResult> RemoveMemberFromGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService)
     {
-        var user = await userService.GetUserAsync(principal);
-        if (user is null)
-            return Results.Unauthorized();
-
         var (id, userId, _) = body;
         var group = await groupService.RemoveGroupMemberAsync(id, userId);
         return Results.Ok(group);

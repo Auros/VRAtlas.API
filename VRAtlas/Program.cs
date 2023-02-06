@@ -88,7 +88,7 @@ builder.Services.AddSwaggerGen(options =>
                 return "Event Star Status";
 
             if (selector == typeof(GroupMemberRole))
-                return "Group Membmer Role";
+                return "Group Member Role";
         }
         return selector.GetCustomAttributes<DisplayNameAttribute>().FirstOrDefault()?.DisplayName ?? selector.Name;
     });

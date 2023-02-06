@@ -280,9 +280,9 @@ public class EventService : IEventService
             return;
 
         atlasEvent.Status = EventStatus.Announced;
-        // TODO: Publish announcement
-
         await _atlasContext.SaveChangesAsync();
+
+        // TODO: Publish announcement
     }
 
     public async Task StartEventAsync(Guid id)

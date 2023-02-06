@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using NodaTime;
 using System.ComponentModel;
 using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
@@ -18,6 +19,9 @@ public class EventEndpoints : IEndpointCollection
 
     [DisplayName("Update Event (Body)")]
     public record class UpdateEventBody(Guid Id, string Name, string Description, Guid Media, IEnumerable<string> Tags, IEnumerable<Guid> Stars);
+
+    [DisplayName("Schedule Event (Body)")]
+    public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant? EndTime);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -45,12 +49,21 @@ public class EventEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status403Forbidden)
             .RequireAuthorization("update:events")
             .AddValidationFilter<UpdateEventBody>();
+
+        group.MapPut("/schedule", ScheduleEvent)
+            .Produces<Event>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<ScheduleEventBody>();
     }
 
     public static void AddServices(IServiceCollection services)
     {
         services.AddScoped<IValidator<CreateEventBody>, CreateEventBodyValidator>();
         services.AddScoped<IValidator<UpdateEventBody>, UpdateEventBodyValidator>();
+        services.AddScoped<IValidator<ScheduleEventBody>, ScheduleEventBodyValidator>();
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)
@@ -89,6 +102,15 @@ public class EventEndpoints : IEndpointCollection
         var (id, name, description, media, tags, stars) = body;
 
         var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id);
+
+        return Results.Ok(atlasEvent);
+    }
+
+    public static async Task<IResult> ScheduleEvent(ScheduleEventBody body, IEventService eventService)
+    {
+        var (id, startTime, endTime) = body;
+
+        var atlasEvent = await eventService.ScheduleEventAsync(id, startTime, endTime);
 
         return Results.Ok(atlasEvent);
     }

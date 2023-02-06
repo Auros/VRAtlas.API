@@ -90,6 +90,13 @@ public interface IEventService
     /// <param name="id">The id of the event.</param>
     /// <returns>The id of the group, if the event exists. Is default if the event does not exist.</returns>
     Task<Guid> GetEventGroupIdAsync(Guid id);
+
+    /// <summary>
+    /// Checks to see if an event can be scheduled.
+    /// </summary>
+    /// <param name="id">The id of the event.</param>
+    /// <returns>Can it be scheduled?</returns>
+    Task<bool> CanScheduleEventAsync(Guid id);
 }
 
 public class EventService : IEventService
@@ -347,5 +354,10 @@ public class EventService : IEventService
     public Task<Guid> GetEventGroupIdAsync(Guid id)
     {
         return _atlasContext.Events.Where(e => e.Id == id).Select(e => e.Owner!.Id).FirstOrDefaultAsync();
+    }
+
+    public Task<bool> CanScheduleEventAsync(Guid id)
+    {
+        return _atlasContext.Events.AnyAsync(e => e.Id == id && (e.Status == EventStatus.Unlisted || e.Status == EventStatus.Announced));
     }
 }

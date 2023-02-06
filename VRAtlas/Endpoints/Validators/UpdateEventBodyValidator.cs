@@ -20,7 +20,7 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
         _httpContextAccessor = httpContextAccessor;
 
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("An event id must be provided")
+            .NotEmpty().WithMessage("An event id must be provided.")
             .MustAsync(EnsureEventExistsAsync).WithMessage("Event does not exist.")
             .MustAsync(EnsureUserCanUpdateEventAsync).WithMessage("Lacking group permissions to update this event.");
 

@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Models;
 using VRAtlas.Services;
@@ -20,6 +21,9 @@ public class UserEndpoints : IEndpointCollection
         group.MapGet("/{id:guid}", GetUserById)
             .Produces<User>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+
+        group.MapGet("/search", SearchForUsers)
+            .Produces<IEnumerable<User>>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetAuthUser(IUserService userService, ClaimsPrincipal principal)
@@ -38,5 +42,16 @@ public class UserEndpoints : IEndpointCollection
             return Results.NotFound();
 
         return Results.Ok(user);
+    }
+
+    private static async Task<IResult> SearchForUsers(IUserService userService, [FromQuery] string? query = null)
+    {
+        // If the search parameter has nothing.
+        if (string.IsNullOrWhiteSpace(query))
+            return Results.Ok(Array.Empty<User>());
+
+        var users = await userService.GetUsersAsync(query);
+
+        return Results.Ok(users);
     }
 }

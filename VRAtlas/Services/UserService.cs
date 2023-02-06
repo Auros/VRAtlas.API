@@ -8,6 +8,7 @@ public interface IUserService
 {
     Task<User?> GetUserAsync(Guid id);
     Task<User?> GetUserAsync(ClaimsPrincipal principal);
+    Task<IEnumerable<User>> GetUsersAsync(string search);
 }
 
 public class UserService : IUserService
@@ -32,5 +33,19 @@ public class UserService : IUserService
             return Task.FromResult<User?>(null);
 
         return _atlasContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.SocialId == socialId);
+    }
+
+    public async Task<IEnumerable<User>> GetUsersAsync(string search)
+    {
+        const int pageSize = 10;
+
+        // If the search is an id, pull the user from that.
+        if (Guid.TryParse(search, out var id))
+        {
+            return await _atlasContext.Users.Where(u => u.Id == id).Take(1).ToArrayAsync();
+        }
+
+        // Search for users by their username.
+        return await _atlasContext.Users.Where(u => u.Username.ToLower().Contains(search.ToLower())).Take(pageSize).ToArrayAsync();
     }
 }

@@ -175,7 +175,17 @@ builder.Services.Configure<JsonOptions>(options =>
 
 var app = builder.Build();
 
-app.UseSwagger();
+app.UseSwagger(options =>
+{
+    // When swagger is viewed through a reverse proxy, make sure to respect any added prefixes on the proxy.
+    options.PreSerializeFilters.Add((swagger, req) =>
+    {
+        if (!req.Headers.TryGetValue("X-Forwarded-Prefix", out var value))
+            return;
+        
+        swagger.Servers = new List<OpenApiServer> { new OpenApiServer { Url = value } };
+    });
+});
 app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();

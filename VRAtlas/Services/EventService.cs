@@ -83,6 +83,13 @@ public interface IEventService
     /// <param name="endTime">The end time of the event.</param>
     /// <returns>The updated event, if it exists.</returns>
     Task<Event?> ScheduleEventAsync(Guid id, Instant startTime, Instant? endTime);
+
+    /// <summary>
+    /// Gets the id of the owning group associated with an event.
+    /// </summary>
+    /// <param name="id">The id of the event.</param>
+    /// <returns>The id of the group, if the event exists. Is default if the event does not exist.</returns>
+    Task<Guid> GetEventGroupIdAsync(Guid id);
 }
 
 public class EventService : IEventService
@@ -335,5 +342,10 @@ public class EventService : IEventService
         }
 
         return atlasEvent;
+    }
+
+    public Task<Guid> GetEventGroupIdAsync(Guid id)
+    {
+        return _atlasContext.Events.Where(e => e.Id == id).Select(e => e.Owner!.Id).FirstOrDefaultAsync();
     }
 }

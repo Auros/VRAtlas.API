@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using System.ComponentModel;
+using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
@@ -15,6 +16,9 @@ public class EventEndpoints : IEndpointCollection
     [DisplayName("Create Event (Body)")]
     public record class CreateEventBody(string Name, Guid Group, Guid Media);
 
+    [DisplayName("Update Event (Body)")]
+    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid Media, IEnumerable<string> Tags, IEnumerable<Guid> Stars);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/events");
@@ -27,12 +31,26 @@ public class EventEndpoints : IEndpointCollection
             .Produces<PaginatedEventQuery>(StatusCodes.Status200OK);
 
         group.MapPost("/", CreateEvent)
-            .Produces(StatusCodes.Status201Created);
+            .Produces<Event>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("create:events")
+            .AddValidationFilter<CreateEventBody>();
+
+        group.MapPut("/", UpdateEvent)
+            .Produces<Event>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization("update:events")
+            .AddValidationFilter<UpdateEventBody>();
     }
 
     public static void AddServices(IServiceCollection services)
     {
         services.AddScoped<IValidator<CreateEventBody>, CreateEventBodyValidator>();
+        services.AddScoped<IValidator<UpdateEventBody>, UpdateEventBodyValidator>();
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)
@@ -60,5 +78,18 @@ public class EventEndpoints : IEndpointCollection
         var atlasEvent = await eventService.CreateEventAsync(name, groupId, mediaId);
 
         return Results.Created($"/events/{atlasEvent.Id}", atlasEvent);
+    }
+
+    public static async Task<IResult> UpdateEvent(UpdateEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    {
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return Results.Unauthorized();
+
+        var (id, name, description, media, tags, stars) = body;
+
+        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id);
+
+        return Results.Ok(atlasEvent);
     }
 }

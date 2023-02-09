@@ -119,7 +119,7 @@ public class EventService : IEventService
             .Include(e => e.Owner)
             .Include(e => e.Tags)
             .Include(e => e.RSVP)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options)

@@ -114,13 +114,14 @@ public class EventEndpoints : IEndpointCollection
         return Results.Ok(atlasEvent);
     }
 
-    public static async Task<IResult> GetEvents(IEventService eventService, Guid? cursor, Guid? group, EventStatus? status)
+    public static async Task<IResult> GetEvents(IEventService eventService, Guid? cursor, Guid? group, EventStatus? status, int size = 25)
     {
         var (events, nextCursor, previousCursor) = await eventService.QueryEventsAsync(new()
         {
             Cursor = cursor,
             Group = group,
-            Status = status
+            Status = status,
+            PageSize = size
         });
         return Results.Ok(new PaginatedEventQuery(events, nextCursor, previousCursor));
     }

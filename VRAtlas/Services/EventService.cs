@@ -45,7 +45,7 @@ public interface IEventService
     /// <param name="eventStars">The stars in this event.</param>
     /// <param name="updater">The person updating the group.</param>
     /// <returns>The updated event or null if it doesn't exist.</returns>
-    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater);
+    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater);
 
     /// <summary>
     /// Announces an event.
@@ -117,6 +117,8 @@ public class EventService : IEventService
             .Include(e => e.Stars)
                 .ThenInclude(s => s.User)
             .Include(e => e.Owner)
+                .ThenInclude(g => g.Members)
+                    .ThenInclude(m => m.User)
             .Include(e => e.Tags)
             .Include(e => e.RSVP)
             .FirstOrDefaultAsync(e => e.Id == id);
@@ -200,7 +202,7 @@ public class EventService : IEventService
         return _atlasContext.Events.AnyAsync(e => e.Id == id);
     }
 
-    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater)
+    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater)
     {
         var atlasEvent = await _atlasContext.Events
             .Include(e => e.Tags)
@@ -214,7 +216,8 @@ public class EventService : IEventService
             return null;
 
         atlasEvent.Name = name;
-        atlasEvent.Media = media;
+        if (media.HasValue)
+            atlasEvent.Media = media.Value;
         atlasEvent.Description = description;
 
         List<EventTag> addedEventTags = new();

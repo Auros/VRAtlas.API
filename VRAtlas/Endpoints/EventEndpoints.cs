@@ -18,7 +18,7 @@ public class EventEndpoints : IEndpointCollection
     public record class CreateEventBody(string Name, Guid Group, Guid Media);
 
     [DisplayName("Update Event (Body)")]
-    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid Media, IEnumerable<string> Tags, IEnumerable<Guid> Stars);
+    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, IEnumerable<string> Tags, IEnumerable<Guid> Stars);
 
     [DisplayName("Schedule Event (Body)")]
     public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant? EndTime);

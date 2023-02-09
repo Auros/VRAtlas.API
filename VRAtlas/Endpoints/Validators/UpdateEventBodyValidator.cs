@@ -47,9 +47,13 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
         return _eventService.EventExistsAsync(id);
     }
 
-    private Task<bool> EnsureValidImageAsync(Guid resourceId, CancellationToken _)
+    private Task<bool> EnsureValidImageAsync(Guid? resourceId, CancellationToken _)
     {
-        return ValidationMethods.EnsureValidImageAsync(resourceId, _httpContextAccessor, _userService, _imageCdnService);
+        // Image is OK if it's not being updated
+        if (!resourceId.HasValue)
+            return Task.FromResult(true);
+
+        return ValidationMethods.EnsureValidImageAsync(resourceId.Value, _httpContextAccessor, _userService, _imageCdnService);
     }
 
     private async Task<bool> EnsureUserCanUpdateEventAsync(Guid id, CancellationToken _)

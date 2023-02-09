@@ -21,7 +21,7 @@ public interface IEventService
     /// <returns>The event, or null if it does not exist.</returns>
     Task<Event?> GetEventByIdAsync(Guid id);
 
-    public record struct EventCollectionQueryOptions(Guid? Cursor, int PageSize = 25);
+    public record struct EventCollectionQueryOptions(Guid? Cursor, Guid? Group, EventStatus? Status, int PageSize = 25);
     public record struct EventCollectionQueryResult(IEnumerable<Event> Events, Guid? NextCursor, Guid? PreviousCursor);
     Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options);
 
@@ -125,7 +125,7 @@ public class EventService : IEventService
     public async Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options)
     {
         Guid? previous = null;
-        var (cursor, pageSize) = options;
+        var (cursor, group, status, pageSize) = options;
         pageSize = 0 > pageSize ? 25 : pageSize; // Ensure page size is greater than zero
         var query = _atlasContext.Events.AsNoTracking();
         query = query.OrderByDescending(e => e.StartTime);
@@ -138,6 +138,16 @@ public class EventService : IEventService
             // Paginate via cursor
             query = query.Where(e => targetTime >= e.StartTime);
             cursor = null;
+        }
+
+        // If we need a specifc group, filter by group.
+        if (group is not null)
+        {
+            query = query.Where(q => q.Owner!.Id == group.Value);
+        }
+        if (status is not null)
+        {
+            query = query.Where(q => q.Status == status.Value);
         }
 
         query = query.Take(pageSize + 1); // Add one to calculate the next cursor element

@@ -14,7 +14,7 @@ public class GroupEndpoints : IEndpointCollection
     public record CreateGroupBody(string Name, string Description, Guid Icon, Guid Banner);
 
     [DisplayName("Update Group (Body)")]
-    public record UpdateGroupBody(Guid Id, string Description, Guid Icon, Guid Banner);
+    public record UpdateGroupBody(Guid Id, string Description, Guid? Icon, Guid? Banner);
 
     [DisplayName("Update Group Member (Body)")]
     public record MutateGroupMemberBody(Guid Id, Guid UserId, GroupMemberRole? Role);

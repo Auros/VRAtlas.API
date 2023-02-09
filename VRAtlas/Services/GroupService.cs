@@ -79,21 +79,19 @@ public interface IGroupService
     /// <param name="icon">The id of the group icon resource.</param>
     /// <param name="banner">The id of the group banner resource.</param>
     /// <returns>The updated group.</returns>
-    Task<Group> ModifyGroupAsync(Guid id, string description, Guid icon, Guid banner);
+    Task<Group> ModifyGroupAsync(Guid id, string description, Guid? icon, Guid? banner);
 }
 
 public class GroupService : IGroupService
 {
     private readonly IClock _clock;
     private readonly IAtlasLogger _atlasLogger;
-    private readonly IUserService _userService;
     private readonly AtlasContext _atlasContext;
 
-    public GroupService(IClock clock, IAtlasLogger<GroupService> atlasLogger, IUserService userService, AtlasContext atlasContext)
+    public GroupService(IClock clock, IAtlasLogger<GroupService> atlasLogger, AtlasContext atlasContext)
     {
         _clock = clock;
         _atlasLogger = atlasLogger;
-        _userService = userService;
         _atlasContext = atlasContext;
     }
 
@@ -170,7 +168,7 @@ public class GroupService : IGroupService
         var member = group.Members.FirstOrDefault(m => m.User!.Id == userId);
         if (member is null)
         {
-            var user = await _userService.GetUserAsync(userId);
+            var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
             // The member is not in the group.
             if (user is null)
                 return group; // Return the group as is, like there were no changes.
@@ -273,7 +271,7 @@ public class GroupService : IGroupService
         return groups;
     }
 
-    public async Task<Group> ModifyGroupAsync(Guid id, string description, Guid icon, Guid banner)
+    public async Task<Group> ModifyGroupAsync(Guid id, string description, Guid? icon, Guid? banner)
     {
         var group = await _atlasContext.Groups.FirstOrDefaultAsync(g => g.Id == id);
         if (group is null)
@@ -282,8 +280,12 @@ public class GroupService : IGroupService
             throw new InvalidOperationException($"Could not find group with id '{id}'.");
         }
 
-        group.Icon = icon;
-        group.Banner = banner;
+        if (icon.HasValue)
+            group.Icon = icon.Value;
+        
+        if (banner.HasValue)
+            group.Banner = banner.Value;
+
         group.Description = description;
 
         await _atlasContext.SaveChangesAsync();

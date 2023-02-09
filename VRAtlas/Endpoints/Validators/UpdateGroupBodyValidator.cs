@@ -22,7 +22,6 @@ public class UpdateGroupBodyValidator : AbstractValidator<GroupEndpoints.UpdateG
             .MaximumLength(1000);
 
         RuleFor(x => x.Icon)
-            .NotEmpty()
             .MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
 
         RuleFor(x => x.Banner)
@@ -45,8 +44,12 @@ public class UpdateGroupBodyValidator : AbstractValidator<GroupEndpoints.UpdateG
         return ValidationMethods.EnsureUserCanUpdateGroupAsync(id, _httpContextAccessor, _userService, _groupService);
     }
 
-    private Task<bool> EnsureValidImageAsync(Guid resourceId, CancellationToken _)
+    private Task<bool> EnsureValidImageAsync(Guid? resourceId, CancellationToken _)
     {
-        return ValidationMethods.EnsureValidImageAsync(resourceId, _httpContextAccessor, _userService, _imageCdnService);
+        // Image is OK if it's not being updated
+        if (!resourceId.HasValue)
+            return Task.FromResult(true);
+
+        return ValidationMethods.EnsureValidImageAsync(resourceId.GetValueOrDefault(), _httpContextAccessor, _userService, _imageCdnService);
     }
 }

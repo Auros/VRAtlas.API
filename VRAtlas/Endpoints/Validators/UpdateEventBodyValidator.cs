@@ -32,10 +32,10 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
             .MaximumLength(2000).WithMessage("Description is too long, maximum length is 2000 characters.");
 
         RuleFor(x => x.Media)
-            .NotEmpty().WithMessage("Invalid media resource id.")
             .MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
 
         RuleFor(x => x.Tags)
+            .Must(t => t.Length <= 50).WithMessage("Cannot have more than 50 tags.")
             .NotNull().WithMessage("Tags property must be provided.");
 
         RuleFor(x => x.Stars)

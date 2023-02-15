@@ -14,13 +14,12 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
     private readonly GroupService _sut;
     private readonly AtlasContext _atlasContext;
     private readonly IClock _clock = Substitute.For<IClock>();
-    private readonly IUserService _userService = Substitute.For<IUserService>();
     private readonly IAtlasLogger<GroupService> _atlasLogger = Substitute.For<IAtlasLogger<GroupService>>();
 
     public GroupServiceTests(AtlasFixture atlasFixture)
     {
         _atlasContext = atlasFixture.Context;
-        _sut = new GroupService(_clock, _atlasLogger, _userService, _atlasContext);
+        _sut = new GroupService(_clock, _atlasLogger, _atlasContext);
     }
 
     [Fact]
@@ -61,7 +60,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
     {
         // Arrange
         var user = AtlasFakes.User.Generate();
-        _userService.GetUserAsync(user.Id).Returns(user);
         _atlasContext.Users.Add(user);
         await _atlasContext.SaveChangesAsync();
 
@@ -101,7 +99,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         var group = AtlasFakes.Group.Generate();
         var owner = group.Members[0];
         _atlasContext.Groups.Add(group);
-        _userService.GetUserAsync(owner.User!.Id).Returns(owner.User!);
         await _atlasContext.SaveChangesAsync();
 
         // Act
@@ -139,8 +136,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         var owner = group.Members[0];
         var addedUser = AtlasFakes.User.Generate();
         _clock.GetCurrentInstant().Returns(_ => SystemClock.Instance.GetCurrentInstant());
-        _userService.GetUserAsync(owner.User!.Id).Returns(owner.User!);
-        _userService.GetUserAsync(addedUser.Id).Returns(addedUser);
 
         _atlasContext.Groups.Add(group);
         _atlasContext.Users.Add(addedUser);
@@ -156,7 +151,7 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         // Cleanup
         _atlasContext.Groups.Remove(group);
         _atlasContext.Users.Remove(addedUser);
-        _atlasContext.Users.Remove(owner.User);
+        _atlasContext.Users.Remove(owner.User!);
         await _atlasContext.SaveChangesAsync();
     }
 
@@ -168,8 +163,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         var owner = group.Members[0];
         var addedUser = AtlasFakes.User.Generate();
         _clock.GetCurrentInstant().Returns(_ => SystemClock.Instance.GetCurrentInstant());
-        _userService.GetUserAsync(owner.User!.Id).Returns(owner.User!);
-        _userService.GetUserAsync(addedUser.Id).Returns(addedUser);
 
         _atlasContext.Groups.Add(group);
         _atlasContext.Users.Add(addedUser);
@@ -184,7 +177,7 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         // Cleanup
         _atlasContext.Groups.Remove(group);
         _atlasContext.Users.Remove(addedUser);
-        _atlasContext.Users.Remove(owner.User);
+        _atlasContext.Users.Remove(owner.User!);
         await _atlasContext.SaveChangesAsync();
     }
 
@@ -197,8 +190,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         var owner = group.Members[0];
         var target = group.Members[1];
         target.Role = GroupMemberRole.Manager;
-        _userService.GetUserAsync(owner.User!.Id).Returns(owner.User!);
-        _userService.GetUserAsync(target.User!.Id).Returns(target.User!);
 
         _atlasContext.Groups.Add(group);
         await _atlasContext.SaveChangesAsync();
@@ -212,7 +203,7 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
 
         // Cleanup
         _atlasContext.Groups.Remove(group);
-        _atlasContext.Users.Remove(owner.User);
+        _atlasContext.Users.Remove(owner.User!);
         _atlasContext.Users.Remove(target.User);
         await _atlasContext.SaveChangesAsync();
     }
@@ -223,7 +214,6 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         // Arrange
         var group = AtlasFakes.Group.Generate();
         var owner = group.Members[0];
-        _userService.GetUserAsync(owner.User!.Id).Returns(owner.User!);
 
         _atlasContext.Groups.Add(group);
         await _atlasContext.SaveChangesAsync();

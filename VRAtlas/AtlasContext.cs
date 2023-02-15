@@ -13,6 +13,8 @@ public class AtlasContext : DbContext
 
     public DbSet<Group> Groups => Set<Group>();
 
+    public DbSet<EventTag> EventTags => Set<EventTag>();
+
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
 
     public AtlasContext(DbContextOptions options) : base(options)

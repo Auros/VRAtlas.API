@@ -20,6 +20,7 @@ using System.Security.Claims;
 using System.Text;
 using VRAtlas;
 using VRAtlas.Authorization;
+using VRAtlas.Converters;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Logging;
 using VRAtlas.Models;
@@ -31,7 +32,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Setup our logger with Serilog
 var logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    //.MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Async(options => options.Console())
     .CreateLogger();
@@ -170,6 +171,7 @@ builder.Services.AddQuartzServer(options =>
 });
 builder.Services.Configure<JsonOptions>(options =>
 {
+    options.SerializerOptions.Converters.Add(new WritableTagModelJsonConverter());
     options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 });
 

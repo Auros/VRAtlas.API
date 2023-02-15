@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using System.Linq;
 using VRAtlas.Models;
 using static VRAtlas.Services.IEventService;
 
@@ -120,7 +121,9 @@ public class EventService : IEventService
                 .ThenInclude(g => g.Members)
                     .ThenInclude(m => m.User)
             .Include(e => e.Tags)
+                .ThenInclude(e => e.Tag)
             .Include(e => e.RSVP)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 
@@ -129,7 +132,7 @@ public class EventService : IEventService
         Guid? previous = null;
         var (cursor, group, status, pageSize) = options;
         pageSize = 0 > pageSize ? 25 : pageSize; // Ensure page size is greater than zero
-        var query = _atlasContext.Events.AsNoTracking();
+        IQueryable<Event> query = _atlasContext.Events.AsNoTracking().Include(e => e.Tags).ThenInclude(t => t.Tag);
         query = query.OrderByDescending(e => e.StartTime);
         
         if (cursor is not null)
@@ -170,8 +173,13 @@ public class EventService : IEventService
         {
             var firstEvent = events[0];
 
+            // TODO: FIX
+
             // Queries the last page and gets the id for its first element. 
-            previous = await _atlasContext.Events.AsNoTracking().OrderBy(e => e.StartTime).Where(e => e.StartTime > firstEvent.StartTime).Take(pageSize).Select(e => e.Id).LastOrDefaultAsync();
+            previous = await query
+                .Where(e => e.StartTime > firstEvent.StartTime)
+                .Take(pageSize).Select(e => e.Id)
+                .LastOrDefaultAsync();
         }
 
         return new EventCollectionQueryResult(query, cursor, previous);
@@ -204,12 +212,13 @@ public class EventService : IEventService
 
     public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater)
     {
+        // Pre-create any tags up here.
+        foreach (var tag in tags)
+            await _tagService.CreateTagAsync(tag, updater);
+
         var atlasEvent = await _atlasContext.Events
-            .Include(e => e.Tags)
-                .ThenInclude(e => e.Tag)
-            .Include(e => e.Owner)
             .Include(e => e.Stars)
-                .ThenInclude(es => es.User)
+                .ThenInclude(s => s.User)
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (atlasEvent is null)
@@ -220,68 +229,53 @@ public class EventService : IEventService
             atlasEvent.Media = media.Value;
         atlasEvent.Description = description;
 
-        List<EventTag> addedEventTags = new();
-        foreach (var tagName in tags)
+        // Load and remove any previous tags.
+        var eventTags = await _atlasContext.EventTags.Where(t => t.Event.Id == id).ToArrayAsync();
+        if (eventTags.Any())
+            _atlasContext.EventTags.RemoveRange(eventTags);
+
+        // Search for the new tags and add them to the DB
+        var tagSearch = tags.Select(t => t.ToLower());
+        var relevantTags = await _atlasContext.Tags.Where(t => tagSearch.Contains(t.Name.ToLower())).ToArrayAsync();
+        _atlasContext.EventTags.AddRange(relevantTags.Select(t => new EventTag
         {
-            var search = tagName.ToLower();
-            var currentEventTag = atlasEvent.Tags.FirstOrDefault(et => et.Tag.Name.ToLower() == search.ToLower());
-
-            if (currentEventTag is not null)
-            {
-                addedEventTags.Add(currentEventTag);
-                continue;
-            }    
-
-            var tag = await _tagService.GetTagAsync(tagName);
-            tag ??= await _tagService.CreateTagAsync(tagName, updater);
-
-            EventTag eventTag = new()
-            {
-                Id = Guid.NewGuid(),
-                Tag = tag,
-                Event = atlasEvent
-            };
-
-            addedEventTags.Add(eventTag);
-            atlasEvent.Tags.Add(eventTag);
-        }
-
-        foreach (var tagToRemove in atlasEvent.Tags.Where(ae => !addedEventTags.Contains(ae)))
-            atlasEvent.Tags.Remove(tagToRemove);
-
-        List<EventStar> addedEventStars = new();
-        foreach (var starId in eventStars)
-        {
-            var currentStar = atlasEvent.Stars.FirstOrDefault(es => es.User!.Id == starId);
-            if (currentStar is not null)
-            {
-                addedEventStars.Add(currentStar);
-                continue;
-            }
-
-            var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == starId);
-            if (user is null)
-                continue;
-
-            EventStar eventStar = new()
-            {
-                User = user,
-                Id = Guid.NewGuid(),
-                Status = EventStarStatus.Pending
-            };
-
-            // TODO: Publish event to these event stars saying that they've been added.
-            addedEventStars.Add(eventStar);
-            atlasEvent.Stars.Add(eventStar);
-        }
-
-        foreach (var starsToRemove in atlasEvent.Tags.Where(ae => !addedEventTags.Contains(ae)))
-        {
-            // TODO: Publish event to these event stars saying that they've been removed.
-            atlasEvent.Tags.Remove(starsToRemove);
-        }    
-
+            Id = Guid.NewGuid(),
+            Event = atlasEvent,
+            Tag = t
+        }));
         await _atlasContext.SaveChangesAsync();
+
+        if (eventStars.Any())
+        {
+            var newStarsIds = eventStars.ToArray();
+            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Contains(s.Id));
+            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.Id == s));
+
+            // Remove any stars that were removed
+            atlasEvent.Stars.RemoveAll(removedStars.Contains);
+            foreach (var starId in addedStarsIds)
+            {
+                // Look for the user.
+                var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == starId);
+
+                // If they don't exist, skip over them.
+                if (user is null)
+                    continue;
+
+                // Add them to the event.
+                atlasEvent.Stars.Add(new EventStar
+                {
+                    Status = EventStarStatus.Pending,
+                    User = user
+                });
+
+                // TODO: Invoke invite notification
+            }
+            await _atlasContext.SaveChangesAsync();
+        }
+
+        // Return a fresh event for consumers (since we updated the object indirectly)
+        atlasEvent = await GetEventByIdAsync(id);
 
         return atlasEvent;
     }
@@ -342,6 +336,7 @@ public class EventService : IEventService
             .Include(e => e.Owner)
             .Include(e => e.Stars)
                 .ThenInclude(es => es.User)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (atlasEvent is null)

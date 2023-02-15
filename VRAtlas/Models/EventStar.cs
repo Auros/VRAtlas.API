@@ -16,4 +16,6 @@ public class EventStar
     public User? User { get; set; }
 
     public EventStarStatus Status { get; set; }
+
+    public string? Title { get; set; }
 }

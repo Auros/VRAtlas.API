@@ -46,7 +46,7 @@ public interface IEventService
     /// <param name="eventStars">The stars in this event.</param>
     /// <param name="updater">The person updating the group.</param>
     /// <returns>The updated event or null if it doesn't exist.</returns>
-    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater);
+    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater);
 
     /// <summary>
     /// Announces an event.
@@ -118,7 +118,7 @@ public class EventService : IEventService
             .Include(e => e.Stars)
                 .ThenInclude(s => s.User)
             .Include(e => e.Owner)
-                .ThenInclude(g => g.Members)
+                .ThenInclude(g => g!.Members)
                     .ThenInclude(m => m.User)
             .Include(e => e.Tags)
                 .ThenInclude(e => e.Tag)
@@ -210,7 +210,7 @@ public class EventService : IEventService
         return _atlasContext.Events.AnyAsync(e => e.Id == id);
     }
 
-    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<Guid> eventStars, Guid updater)
+    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater)
     {
         // Pre-create any tags up here.
         foreach (var tag in tags)
@@ -248,15 +248,16 @@ public class EventService : IEventService
         if (eventStars.Any())
         {
             var newStarsIds = eventStars.ToArray();
-            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Contains(s.Id));
-            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.Id == s));
+            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Any(n => n.Star == s.Id));
+            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.Id == s.Star));
+            var existingStars = newStarsIds.Where(s => !addedStarsIds.Contains(s));
 
             // Remove any stars that were removed
             atlasEvent.Stars.RemoveAll(removedStars.Contains);
-            foreach (var starId in addedStarsIds)
+            foreach (var star in addedStarsIds)
             {
                 // Look for the user.
-                var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == starId);
+                var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == star.Star);
 
                 // If they don't exist, skip over them.
                 if (user is null)
@@ -265,12 +266,24 @@ public class EventService : IEventService
                 // Add them to the event.
                 atlasEvent.Stars.Add(new EventStar
                 {
+                    Title = string.IsNullOrWhiteSpace(star.Title) ? null : star.Title,
                     Status = EventStarStatus.Pending,
                     User = user
                 });
 
                 // TODO: Invoke invite notification
             }
+
+            foreach (var star in existingStars)
+            {
+                atlasEvent.Stars.First().Title = string.IsNullOrWhiteSpace(star.Title) ? null : star.Title;
+            }
+
+            await _atlasContext.SaveChangesAsync();
+        }
+        else
+        {
+            atlasEvent.Stars.Clear();
             await _atlasContext.SaveChangesAsync();
         }
 

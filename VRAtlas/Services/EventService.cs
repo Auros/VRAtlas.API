@@ -213,6 +213,7 @@ public class EventService : IEventService
     public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater)
     {
         // Pre-create any tags up here.
+        // TODO: Reuse the captured ids.
         foreach (var tag in tags)
             await _tagService.CreateTagAsync(tag, updater);
 

@@ -25,7 +25,6 @@ public class UpdateGroupBodyValidator : AbstractValidator<GroupEndpoints.UpdateG
             .MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
 
         RuleFor(x => x.Banner)
-            .NotEmpty()
             .MustAsync(EnsureValidImageAsync).WithMessage("Invalid banner image resource id.");
 
         RuleFor(x => x.Id)

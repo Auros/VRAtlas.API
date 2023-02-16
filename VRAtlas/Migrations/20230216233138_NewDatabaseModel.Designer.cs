@@ -13,15 +13,15 @@ using VRAtlas;
 namespace VRAtlas.Migrations
 {
     [DbContext(typeof(AtlasContext))]
-    [Migration("20230205153827_SpecificEventTagsAndMore")]
-    partial class SpecificEventTagsAndMore
+    [Migration("20230216233138_NewDatabaseModel")]
+    partial class NewDatabaseModel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.1")
+                .HasAnnotation("ProductVersion", "7.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -71,15 +71,20 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.EventStar", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid?>("EventId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -95,9 +100,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.EventTag", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
@@ -111,7 +118,7 @@ namespace VRAtlas.Migrations
 
                     b.HasIndex("TagId");
 
-                    b.ToTable("EventTag");
+                    b.ToTable("EventTags");
                 });
 
             modelBuilder.Entity("VRAtlas.Models.Group", b =>
@@ -146,9 +153,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.GroupMember", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");

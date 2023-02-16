@@ -1,6 +1,7 @@
 ﻿using NodaTime;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
@@ -9,7 +10,8 @@ namespace VRAtlas.Models;
 public class GroupMember
 {
     [JsonIgnore]
-    public Guid Id { get; set; }
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
 
     [Required]
     [JsonIgnore]

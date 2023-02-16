@@ -102,7 +102,7 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
         await _atlasContext.SaveChangesAsync();
 
         // Act
-        Func<Task> act = async () => { await _sut.CreateGroupAsync(group.Name, string.Empty, Guid.NewGuid(), Guid.NewGuid(), owner.Id); };
+        Func<Task> act = async () => { await _sut.CreateGroupAsync(group.Name, string.Empty, Guid.NewGuid(), Guid.NewGuid(), owner.User!.Id); };
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage($"Group name '{group.Name}' already exists");
@@ -226,7 +226,7 @@ public sealed class GroupServiceTests : IClassFixture<AtlasFixture>
 
         // Cleanup
         _atlasContext.Groups.Remove(group);
-        _atlasContext.Users.Remove(owner.User);
+        _atlasContext.Users.Remove(owner.User!);
         await _atlasContext.SaveChangesAsync();
     }
 

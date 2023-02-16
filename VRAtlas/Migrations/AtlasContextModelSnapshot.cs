@@ -68,9 +68,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.EventStar", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid?>("EventId")
                         .HasColumnType("uuid");
@@ -95,9 +97,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.EventTag", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
@@ -146,9 +150,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.GroupMember", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");

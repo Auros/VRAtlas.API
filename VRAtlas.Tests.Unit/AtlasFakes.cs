@@ -26,7 +26,7 @@ internal class AtlasFakes
         .RuleFor(p => p.LastLoginAt, f => SystemClock.Instance.GetCurrentInstant());
 
     public static Faker<GroupMember> GroupMember { get; } = new Faker<GroupMember>()
-        .RuleFor(p => p.Id, f => f.Random.Guid())
+        .RuleFor(p => p.Id, f => f.Random.Int())
         .RuleFor(p => p.User, _ => User.Generate())
         .RuleFor(p => p.Role, _ => GroupMemberRole.Owner)
         .RuleFor(p => p.JoinedAt, _ => SystemClock.Instance.GetCurrentInstant());

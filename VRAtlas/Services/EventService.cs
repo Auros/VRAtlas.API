@@ -240,7 +240,6 @@ public class EventService : IEventService
         var relevantTags = await _atlasContext.Tags.Where(t => tagSearch.Contains(t.Name.ToLower())).ToArrayAsync();
         _atlasContext.EventTags.AddRange(relevantTags.Select(t => new EventTag
         {
-            Id = Guid.NewGuid(),
             Event = atlasEvent,
             Tag = t
         }));
@@ -249,8 +248,8 @@ public class EventService : IEventService
         if (eventStars.Any())
         {
             var newStarsIds = eventStars.ToArray();
-            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Any(n => n.Star == s.Id));
-            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.Id == s.Star));
+            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Any(n => n.Star == s.User.Id));
+            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.User.Id == s.Star));
             var existingStars = newStarsIds.Where(s => !addedStarsIds.Contains(s));
 
             // Remove any stars that were removed

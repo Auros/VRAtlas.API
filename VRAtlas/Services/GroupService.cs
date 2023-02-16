@@ -138,7 +138,6 @@ public class GroupService : IGroupService
             {
                 new GroupMember
                 {
-                    Id = Guid.NewGuid(),
                     User = owner,
                     JoinedAt = now,
                     Role = GroupMemberRole.Owner,
@@ -177,7 +176,6 @@ public class GroupService : IGroupService
             var now = _clock.GetCurrentInstant();
             member = new()
             {
-                Id = Guid.NewGuid(),
                 User = user,
                 Role = role,
                 JoinedAt = now,

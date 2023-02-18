@@ -42,7 +42,7 @@ public class AtlasContext : DbContext
         modelBuilder
             .Entity<User>()
             .Property(u => u.Links)
-            .HasConversion(l => SerializeObject(l), l => DeserializeObject<List<string>>(l));
+            .HasConversion(l => SerializeList(l), l => DeserializeList<string>(l));
 
         // Register value comparer for user's Links property. This cannot
         // be chained with the conversion registration call above.
@@ -52,11 +52,11 @@ public class AtlasContext : DbContext
             .Metadata.SetValueComparer(GenerateListValueComparer<string>());
     }
 
-    private static string SerializeObject<T>(T value) => JsonSerializer.Serialize(value);
+    private static string SerializeList<T>(List<T> value) => JsonSerializer.Serialize(value);
 
-    private static T DeserializeObject<T>(string value) => JsonSerializer.Deserialize<T>(value)!;
+    private static List<T> DeserializeList<T>(string value) => string.IsNullOrWhiteSpace(value) ? new List<T>() : JsonSerializer.Deserialize<List<T>>(value)!;
 
-    private static ValueComparer<List<T>> GenerateListValueComparer<T>() => new ValueComparer<List<T>>(
+    private static ValueComparer<List<T>> GenerateListValueComparer<T>() => new(
         (c1, c2) => c1!.SequenceEqual(c2!),
         c => c.Aggregate(
             0,

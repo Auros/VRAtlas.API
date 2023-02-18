@@ -46,8 +46,10 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
-builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
+
+builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
 
 // Jwt registration

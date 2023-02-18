@@ -58,6 +58,10 @@ public class UserGrantService : IUserGrantService
                     SynchronizeProfilePictureWithSocialPlatform = true,
                     CurrentSocialPlatformUsername = payload.Name,
                     CurrentSocialPlatformProfilePicture = payload.Picture.ToString(),
+                },
+                DefaultNotificationSettings = new NotificationMetadata
+                {
+                    AtOneHour = true
                 }
             };
             _atlasContext.Users.Add(user);

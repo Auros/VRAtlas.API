@@ -23,7 +23,8 @@ internal class AtlasFakes
             return metadata;
         })
         .RuleFor(p => p.JoinedAt, f => SystemClock.Instance.GetCurrentInstant())
-        .RuleFor(p => p.LastLoginAt, f => SystemClock.Instance.GetCurrentInstant());
+        .RuleFor(p => p.LastLoginAt, f => SystemClock.Instance.GetCurrentInstant())
+        .RuleFor(p => p.DefaultNotificationSettings, _ => new NotificationMetadata());
 
     public static Faker<GroupMember> GroupMember { get; } = new Faker<GroupMember>()
         .RuleFor(p => p.Id, f => f.Random.Int())

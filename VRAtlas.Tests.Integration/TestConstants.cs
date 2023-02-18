@@ -23,17 +23,10 @@ internal static class TestConstants
 
     public static async Task<string> LoginDefaultTestUser(this HttpClient httpClient)
     {
+        var code = ValidAuth0Code;
+        var redirectUri = ValidAuth0RedirectUrl;
+        var validAccessToken = ValidUserAccessToken;
         var escape = Uri.EscapeDataString;
-        var code = TestConstants.ValidAuth0Code;
-        var redirectUri = TestConstants.ValidAuth0RedirectUrl;
-        var validAccessToken = TestConstants.ValidUserAccessToken;
-
-        var msg = new HttpRequestMessage
-        {
-            RequestUri = new Uri("user/@me", UriKind.Relative),
-            Method = HttpMethod.Get
-        };
-        msg.Headers.Authorization = new AuthenticationHeaderValue("Test", validAccessToken);
 
         using var _ = await httpClient.GetAsync($"auth/token?code={escape(code)}&redirectUri={redirectUri}");
 

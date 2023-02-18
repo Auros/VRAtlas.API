@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NodaTime;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using VRAtlas;
 namespace VRAtlas.Migrations
 {
     [DbContext(typeof(AtlasContext))]
-    partial class AtlasContextModelSnapshot : ModelSnapshot
+    [Migration("20230217215003_PersonalizedUserOptions")]
+    partial class PersonalizedUserOptions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,38 +121,6 @@ namespace VRAtlas.Migrations
                     b.ToTable("EventTags");
                 });
 
-            modelBuilder.Entity("VRAtlas.Models.Follow", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("EntityType")
-                        .HasColumnType("integer");
-
-                    b.Property<Instant>("FollowedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("MetadataId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MetadataId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Follows");
-                });
-
             modelBuilder.Entity("VRAtlas.Models.Group", b =>
                 {
                     b.Property<Guid>("Id")
@@ -209,64 +180,6 @@ namespace VRAtlas.Migrations
                     b.ToTable("GroupMembers");
                 });
 
-            modelBuilder.Entity("VRAtlas.Models.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("EntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("EntityType")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("Read")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("VRAtlas.Models.NotificationMetadata", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AtOneDay")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("AtOneHour")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("AtStart")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("AtThirtyMinutes")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NotificationMetadata");
-                });
-
             modelBuilder.Entity("VRAtlas.Models.RSVP", b =>
                 {
                     b.Property<Guid>("Id")
@@ -317,9 +230,6 @@ namespace VRAtlas.Migrations
                     b.Property<string>("Biography")
                         .HasColumnType("text");
 
-                    b.Property<int>("DefaultNotificationSettingsId")
-                        .HasColumnType("integer");
-
                     b.Property<Instant>("JoinedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -340,13 +250,14 @@ namespace VRAtlas.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DefaultNotificationSettingsId");
 
                     b.HasIndex("Id");
 
@@ -433,23 +344,6 @@ namespace VRAtlas.Migrations
                     b.Navigation("Tag");
                 });
 
-            modelBuilder.Entity("VRAtlas.Models.Follow", b =>
-                {
-                    b.HasOne("VRAtlas.Models.NotificationMetadata", "Metadata")
-                        .WithMany()
-                        .HasForeignKey("MetadataId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("VRAtlas.Models.User", null)
-                        .WithMany("Following")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Metadata");
-                });
-
             modelBuilder.Entity("VRAtlas.Models.GroupMember", b =>
                 {
                     b.HasOne("VRAtlas.Models.Group", "Group")
@@ -469,15 +363,6 @@ namespace VRAtlas.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("VRAtlas.Models.Notification", b =>
-                {
-                    b.HasOne("VRAtlas.Models.User", null)
-                        .WithMany("Notifications")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("VRAtlas.Models.Tag", b =>
                 {
                     b.HasOne("VRAtlas.Models.User", "CreatedBy")
@@ -491,19 +376,11 @@ namespace VRAtlas.Migrations
 
             modelBuilder.Entity("VRAtlas.Models.User", b =>
                 {
-                    b.HasOne("VRAtlas.Models.NotificationMetadata", "DefaultNotificationSettings")
-                        .WithMany()
-                        .HasForeignKey("DefaultNotificationSettingsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("VRAtlas.Models.UserMetadata", "Metadata")
                         .WithMany()
                         .HasForeignKey("MetadataId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("DefaultNotificationSettings");
 
                     b.Navigation("Metadata");
                 });
@@ -518,13 +395,6 @@ namespace VRAtlas.Migrations
             modelBuilder.Entity("VRAtlas.Models.Group", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("VRAtlas.Models.User", b =>
-                {
-                    b.Navigation("Following");
-
-                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,6 +9,7 @@ public interface IUserService
     Task<User?> GetUserAsync(Guid id);
     Task<User?> GetUserAsync(ClaimsPrincipal principal);
     Task<IEnumerable<User>> GetUsersAsync(string search);
+    Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, NotificationMetadata notificationMetadata);
 }
 
 public class UserService : IUserService
@@ -47,5 +48,28 @@ public class UserService : IUserService
 
         // Search for users by their username.
         return await _atlasContext.Users.Where(u => u.Username.ToLower().Contains(search.ToLower())).Take(pageSize).ToArrayAsync();
+    }
+
+    public async Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, NotificationMetadata notificationMetadata)
+    {
+        var socialId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (socialId is null)
+            return null;
+
+        var user = await _atlasContext.Users.Include(u => u.DefaultNotificationSettings).FirstOrDefaultAsync(u => u.SocialId == socialId);
+        if (user is null)
+            return null;
+        
+        user.Biography = bio;
+        user.Links = links.ToList();
+        user.DefaultNotificationSettings!.AtStart = notificationMetadata.AtStart;
+        user.DefaultNotificationSettings!.AtThirtyMinutes = notificationMetadata.AtThirtyMinutes;
+        user.DefaultNotificationSettings!.AtOneHour = notificationMetadata.AtOneHour;
+        user.DefaultNotificationSettings!.AtOneDay = notificationMetadata.AtOneDay;
+
+        await _atlasContext.SaveChangesAsync();
+
+        return user;
     }
 }

@@ -15,12 +15,26 @@ public class User
 
     public Guid Picture { get; set; } 
 
+    public string? Biography { get; set; }
+
+    public List<string> Links { get; set; } = new();
+
     [JsonIgnore]
     public string SocialId { get; set; } = null!;
 
     [Required]
     [JsonIgnore]
     public UserMetadata? Metadata { get; set; }
+
+    [Required]
+    [JsonIgnore]
+    public NotificationMetadata? DefaultNotificationSettings { get; set; }
+
+    [JsonIgnore]
+    public List<Follow> Following { get; set; } = new();
+
+    [JsonIgnore]
+    public List<Notification> Notifications { get; set; } = new();
 
     [JsonIgnore]
     public Instant JoinedAt { get; set; }

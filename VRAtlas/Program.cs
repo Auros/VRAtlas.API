@@ -22,8 +22,11 @@ using System.Text;
 using VRAtlas;
 using VRAtlas.Authorization;
 using VRAtlas.Converters;
+using VRAtlas.Core;
 using VRAtlas.Endpoints.Internal;
+using VRAtlas.Events;
 using VRAtlas.Jobs;
+using VRAtlas.Listeners;
 using VRAtlas.Logging;
 using VRAtlas.Models;
 using VRAtlas.Options;
@@ -53,6 +56,9 @@ builder.Services.AddScoped<IUserGrantService, UserGrantService>();
 
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
+
+// Event registration
+builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventAnnouncementListener>();
 
 // Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();

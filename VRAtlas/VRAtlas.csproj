@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.4.0" />
     <PackageReference Include="LitJWT" Version="2.0.2" />
-    <PackageReference Include="MessagePipe" Version="1.7.4" />
     <PackageReference Include="MicroElements.Swashbuckle.NodaTime" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.2" />
@@ -29,6 +28,10 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VRAtlas.Core\VRAtlas.Core.csproj" />
   </ItemGroup>
 
 </Project>

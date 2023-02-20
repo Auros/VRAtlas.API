@@ -14,13 +14,13 @@ internal class SubscriberHostedService<T> : IHostedService, IMessageHandler<T>
     private readonly ILogger _logger;
     private readonly ISubscriber<T> _subscriber;
     private readonly IServiceProvider _serviceProvider;
-    private readonly List<ScopedSubscriberInfo<T>> _scopedSubscriberInfos;
+    private readonly IEnumerable<ScopedSubscriberInfo<T>> _scopedSubscriberInfos;
 
     public SubscriberHostedService(
         ILogger<SubscriberHostedService<T>> logger,
         ISubscriber<T> subscriber,
         IServiceProvider serviceProvider,
-        List<ScopedSubscriberInfo<T>> scopedSubscriberInfos)
+        IEnumerable<ScopedSubscriberInfo<T>> scopedSubscriberInfos)
     {
         _logger = logger;
         _subscriber = subscriber;

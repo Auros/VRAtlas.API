@@ -1,5 +1,6 @@
 using LitJWT;
 using LitJWT.Algorithms;
+using MessagePipe;
 using MicroElements.Swashbuckle.NodaTime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +23,7 @@ using VRAtlas;
 using VRAtlas.Authorization;
 using VRAtlas.Converters;
 using VRAtlas.Endpoints.Internal;
+using VRAtlas.Jobs;
 using VRAtlas.Logging;
 using VRAtlas.Models;
 using VRAtlas.Options;
@@ -58,6 +60,7 @@ builder.Services.AddSingleton(services => new JwtDecoder(services.GetRequiredSer
 builder.Services.AddSingleton<IJwtAlgorithm>(services => new HS256Algorithm(Encoding.UTF8.GetBytes(services.GetRequiredService<IOptions<Auth0Options>>().Value.ClientSecret)));
 
 // Core registration
+builder.Services.AddMessagePipe();
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IAuthorizationHandler, HasPermissionHandler>();
 builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
@@ -165,6 +168,25 @@ builder.Services.AddQuartz(options =>
         var quartzConnString = builder.Configuration.GetConnectionString("Quartz") ?? string.Empty;
         store.UsePostgres(quartzConnString);
         store.UseJsonSerializer();
+
+        options.AddJob<EventStartingJob>(jc =>
+        {
+            jc.StoreDurably();
+            jc.WithIdentity(EventStartingJob.Key);
+            jc.WithDescription("Activates when an event is supposed to start.");
+        });
+        options.AddJob<EventEndingJob>(jc =>
+        {
+            jc.StoreDurably();
+            jc.WithIdentity(EventEndingJob.Key);
+            jc.WithDescription("Activates when an event is supposed to end.");
+        });
+        options.AddJob<EventReminderJob>(jc =>
+        {
+            jc.StoreDurably();
+            jc.WithIdentity(EventReminderJob.Key);
+            jc.WithDescription("Activates when an event reminder point gets hit.");
+        });
     });
 });
 builder.Services.AddQuartzServer(options =>

@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MessagePipe;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using System.Linq;
+using VRAtlas.Events;
 using VRAtlas.Models;
 using static VRAtlas.Services.IEventService;
 
@@ -104,11 +105,28 @@ public class EventService : IEventService
 {
     private readonly ITagService _tagService;
     private readonly AtlasContext _atlasContext;
+    private readonly IPublisher<EventCreatedEvent> _eventCreated;
+    private readonly IPublisher<EventScheduledEvent> _eventScheduled;
+    private readonly IPublisher<EventStatusUpdatedEvent> _eventStatusUpdated;
+    private readonly IPublisher<EventStarInvitedEvent> _eventStarInvited;
+    private readonly IPublisher<EventStarAcceptedInviteEvent> _eventStarAccepted;
 
-    public EventService(ITagService tagService, AtlasContext atlasContext)
+    public EventService(
+        ITagService tagService,
+        AtlasContext atlasContext,
+        IPublisher<EventCreatedEvent> eventCreated,
+        IPublisher<EventScheduledEvent> eventScheduled,
+        IPublisher<EventStatusUpdatedEvent> eventStatusUpdated,
+        IPublisher<EventStarInvitedEvent> eventStarInvited,
+        IPublisher<EventStarAcceptedInviteEvent> eventStarAccepted)
     {
         _tagService = tagService;
         _atlasContext = atlasContext;
+        _eventCreated = eventCreated;
+        _eventScheduled = eventScheduled;
+        _eventStatusUpdated = eventStatusUpdated;
+        _eventStarInvited = eventStarInvited;
+        _eventStarAccepted = eventStarAccepted;
     }
 
     public Task<Event?> GetEventByIdAsync(Guid id)
@@ -202,6 +220,7 @@ public class EventService : IEventService
 
         _atlasContext.Events.Add(atlasEvent);
         await _atlasContext.SaveChangesAsync();
+        _eventCreated.Publish(new EventCreatedEvent(group.Id));
         return atlasEvent;
     }
 
@@ -220,6 +239,8 @@ public class EventService : IEventService
         var atlasEvent = await _atlasContext.Events
             .Include(e => e.Stars)
                 .ThenInclude(s => s.User)
+            .Include(s => s.Owner)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (atlasEvent is null)
@@ -245,6 +266,7 @@ public class EventService : IEventService
         }));
         await _atlasContext.SaveChangesAsync();
 
+        List<EventStar> addedStars = new();
         if (eventStars.Any())
         {
             var newStarsIds = eventStars.ToArray();
@@ -263,15 +285,19 @@ public class EventService : IEventService
                 if (user is null)
                     continue;
 
+                // If they are already in the group, they do not have to go through the invitation process.
+                var roleInEventGroup = await _atlasContext.GroupMembers.Where(gm => gm.Group.Id == atlasEvent.Owner!.Id && gm.User.Id == user.Id).Select(gm => gm.Role).FirstOrDefaultAsync();
+                var status = roleInEventGroup is GroupMemberRole.Standard ? EventStarStatus.Pending : EventStarStatus.Confirmed;
+
                 // Add them to the event.
-                atlasEvent.Stars.Add(new EventStar
+                EventStar eventStar = new()
                 {
                     Title = string.IsNullOrWhiteSpace(star.Title) ? null : star.Title,
-                    Status = EventStarStatus.Pending,
+                    Status = status,
                     User = user
-                });
-
-                // TODO: Invoke invite notification
+                };
+                atlasEvent.Stars.Add(eventStar);
+                addedStars.Add(eventStar);
             }
 
             foreach (var star in existingStars)
@@ -285,6 +311,15 @@ public class EventService : IEventService
         {
             atlasEvent.Stars.Clear();
             await _atlasContext.SaveChangesAsync();
+        }
+
+        // Send notifications for recently added event stars.
+        foreach (var star in addedStars)
+        {
+            if (star.Status is EventStarStatus.Confirmed)
+                _eventStarAccepted.Publish(new EventStarAcceptedInviteEvent(atlasEvent!.Id, star.User!.Id));
+            else if (star.Status is EventStarStatus.Pending)
+                _eventStarInvited.Publish(new EventStarInvitedEvent(atlasEvent!.Id, star.User!.Id));
         }
 
         // Return a fresh event for consumers (since we updated the object indirectly)
@@ -302,7 +337,7 @@ public class EventService : IEventService
         atlasEvent.Status = EventStatus.Announced;
         await _atlasContext.SaveChangesAsync();
 
-        // TODO: Publish announcement
+        _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
     public async Task StartEventAsync(Guid id)
@@ -314,7 +349,7 @@ public class EventService : IEventService
         atlasEvent.Status = EventStatus.Started;
         await _atlasContext.SaveChangesAsync();
 
-        // TODO: Publish event start
+        _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
     public async Task ConcludeEventAsync(Guid id)
@@ -326,7 +361,7 @@ public class EventService : IEventService
         atlasEvent.Status = EventStatus.Concluded;
         await _atlasContext.SaveChangesAsync();
 
-        // TODO: Publish event conclusion
+        _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
     public async Task CancelEventAsync(Guid id)
@@ -338,7 +373,7 @@ public class EventService : IEventService
         atlasEvent.Status = EventStatus.Canceled;
         await _atlasContext.SaveChangesAsync();
 
-        // TODO: Publish event cancellation
+        _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
     public async Task<Event?> ScheduleEventAsync(Guid id, Instant startTime, Instant? endTime)
@@ -366,7 +401,7 @@ public class EventService : IEventService
         var oldTime = atlasEvent.StartTime;
         if (oldTime.HasValue && startTime != oldTime)
         {
-            // TODO: Publish rescheduling
+            _eventScheduled.Publish(new EventScheduledEvent(id));
         }
 
         return atlasEvent;

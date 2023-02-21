@@ -1,6 +1,7 @@
 ﻿using MessagePipe;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using System.Runtime.CompilerServices;
 using VRAtlas.Events;
 using VRAtlas.Models;
 using static VRAtlas.Services.IEventService;
@@ -99,6 +100,22 @@ public interface IEventService
     /// <param name="id">The id of the event.</param>
     /// <returns>Can it be scheduled?</returns>
     Task<bool> CanScheduleEventAsync(Guid id);
+
+    /// <summary>
+    /// Accepts a star invitation.
+    /// </summary>
+    /// <param name="id">The id of the event.</param>
+    /// <param name="userId">The id of the user to accept.</param>
+    /// <returns>Was the acceptance successful? This is false when there was no pending invite.</returns>
+    Task<bool> AcceptStarInvitationAsync(Guid id, Guid userId);
+
+    /// <summary>
+    /// Rejects a star invitation.
+    /// </summary>
+    /// <param name="id">The id of the event.</param>
+    /// <param name="userId">The id of the user to reject.</param>
+    /// <returns>Was the rejection successful? This is false when there was no pending invite.</returns>
+    Task<bool> RejectStarInvitationAsync(Guid id, Guid userId);
 }
 
 public class EventService : IEventService
@@ -422,5 +439,39 @@ public class EventService : IEventService
     public Task<bool> CanScheduleEventAsync(Guid id)
     {
         return _atlasContext.Events.AnyAsync(e => e.Id == id && (e.Status == EventStatus.Unlisted || e.Status == EventStatus.Announced));
+    }
+
+    public async Task<bool> AcceptStarInvitationAsync(Guid id, Guid userId)
+    {
+        var atlasEvent = await _atlasContext.Events.Include(e => e.Stars).ThenInclude(s => s.User).FirstOrDefaultAsync(e => e.Id == id);
+        if (atlasEvent is null)
+            return false;
+
+        var star = atlasEvent.Stars.FirstOrDefault(s => s.User!.Id == userId);
+        if (star is null || star.Status is not EventStarStatus.Pending)
+            return false;
+
+        star.Status = EventStarStatus.Confirmed;
+        await _atlasContext.SaveChangesAsync();
+
+        _eventStarAccepted.Publish(new EventStarAcceptedInviteEvent(atlasEvent!.Id, star.User!.Id));
+
+        return true;
+    }
+
+    public async Task<bool> RejectStarInvitationAsync(Guid id, Guid userId)
+    {
+        var atlasEvent = await _atlasContext.Events.Include(e => e.Stars).ThenInclude(s => s.User).FirstOrDefaultAsync(e => e.Id == id);
+        if (atlasEvent is null)
+            return false;
+
+        var star = atlasEvent.Stars.FirstOrDefault(s => s.User!.Id == userId);
+        if (star is null || star.Status is not EventStarStatus.Pending)
+            return false;
+
+        star.Status = EventStarStatus.Rejected;
+        await _atlasContext.SaveChangesAsync();
+
+        return true;
     }
 }

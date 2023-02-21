@@ -12,22 +12,22 @@ namespace VRAtlas.Endpoints;
 public class EventEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Event Query")]
-    public record class PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
+    public record PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
 
     [DisplayName("Create Event (Body)")]
-    public record class CreateEventBody(string Name, Guid Group, Guid Media);
+    public record CreateEventBody(string Name, Guid Group, Guid Media);
 
     [DisplayName("Update Event (Body)")]
-    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
+    public record UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
 
     [DisplayName("Schedule Event (Body)")]
-    public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant EndTime);
+    public record ScheduleEventBody(Guid Id, Instant StartTime, Instant EndTime);
 
     [DisplayName("Upgrade Event Status (Body)")]
-    public record class UpgradeEventBody(Guid Id);
+    public record UpgradeEventBody(Guid Id);
 
     [DisplayName("Star Invitation (Body)")]
-    public record class StarInvitationBody(Guid Id);
+    public record StarInvitationBody(Guid Id);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {

@@ -12,7 +12,7 @@ namespace VRAtlas.Endpoints;
 public class UserEndpoints : IEndpointCollection
 {
     [DisplayName("Update User (Body)")]
-    public record class UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationMetadata Notifications);
+    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationMetadata Notifications);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {

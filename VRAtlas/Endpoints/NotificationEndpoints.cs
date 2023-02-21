@@ -11,10 +11,10 @@ namespace VRAtlas.Endpoints;
 public class NotificationEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Notification Query")]
-    public record class PaginatedNotificationQuery(IEnumerable<Notification> Notifications, Guid? Next, int Unread);
+    public record PaginatedNotificationQuery(IEnumerable<Notification> Notifications, Guid? Next, int Unread);
 
     [DisplayName("Notification (Body)")]
-    public record class NotificationBody(Guid Id);
+    public record NotificationBody(Guid Id);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {

@@ -11,9 +11,9 @@ namespace VRAtlas.Endpoints;
 public class FollowEndpoints : IEndpointCollection
 {
     [DisplayName("Follow Entity (Body)")]
-    public record class FollowEntityBody(Guid Id, EntityType Type, NotificationMetadata Metadata);
+    public record FollowEntityBody(Guid Id, EntityType Type, NotificationMetadata Metadata);
 
-    public record class FollowStatus(bool Status);
+    public record FollowStatus(bool Status);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {

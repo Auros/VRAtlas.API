@@ -2,4 +2,4 @@
 
 namespace VRAtlas.Events;
 
-public record class NotificationCreatedEvent(Notification Notification, User User);
+public record NotificationCreatedEvent(Notification Notification, User User);

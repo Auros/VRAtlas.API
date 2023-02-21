@@ -21,7 +21,7 @@ public class EventStartingJob : IJob
     {
         try
         {
-            var eventId = context.MergedJobDataMap.GetGuid("event-id");
+            var eventId = context.MergedJobDataMap.GetGuid("Event.Id");
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
             
             // Do not continue if we can't find the event or auto starting is disabled.

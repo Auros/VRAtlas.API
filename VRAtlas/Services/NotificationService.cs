@@ -37,6 +37,7 @@ public interface INotificationService
     /// <param name="targets">The targets to send the notification to.</param>
     /// <returns></returns>
     Task CreateNotificationAsync(Guid entityId, EntityType entityType, string key, string title, string contentTemplate, params Guid[] targets);
+
 }
 
 public class NotificationService : INotificationService

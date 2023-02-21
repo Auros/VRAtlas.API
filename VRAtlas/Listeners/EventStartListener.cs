@@ -19,6 +19,7 @@ public class EventStartListener : IScopedEventListener<EventStatusUpdatedEvent>
         _eventService = eventService;
         _notificationService = notificationService;
     }
+
     public async Task Handle(EventStatusUpdatedEvent message)
     {
         // Only do stuff if this was an event start event.

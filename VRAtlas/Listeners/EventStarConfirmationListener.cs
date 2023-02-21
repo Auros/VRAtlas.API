@@ -46,7 +46,5 @@ public class EventStarConfirmationListener : IScopedEventListener<EventStarAccep
         string title = $"{star.User!.Username} is at {atlasEvent.Name}";
         string description = $"{star.User!.Username} is a star at {atlasEvent.Name} hosted by {atlasEvent.Owner!.Name}";
         await _notificationService.CreateNotificationAsync(atlasEvent.Id, EntityType.Event, NotificationKeys.EventStarConfirmed, title, description, subscribedUserIds);
-
-
     }
 }

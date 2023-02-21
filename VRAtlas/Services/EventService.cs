@@ -1,7 +1,6 @@
 ﻿using MessagePipe;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using System.Runtime.CompilerServices;
 using VRAtlas.Events;
 using VRAtlas.Models;
 using static VRAtlas.Services.IEventService;
@@ -116,6 +115,13 @@ public interface IEventService
     /// <param name="userId">The id of the user to reject.</param>
     /// <returns>Was the rejection successful? This is false when there was no pending invite.</returns>
     Task<bool> RejectStarInvitationAsync(Guid id, Guid userId);
+
+    /// <summary>
+    /// Gets the status of an event.
+    /// </summary>
+    /// <param name="id">The id of the event.</param>
+    /// <returns>The status of the event, or null if the event doesn't exist.</returns>
+    Task<EventStatus?> GetEventStatusAsync(Guid id);
 }
 
 public class EventService : IEventService
@@ -473,5 +479,14 @@ public class EventService : IEventService
         await _atlasContext.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<EventStatus?> GetEventStatusAsync(Guid id)
+    {
+        // You cannot get nullable primitives from a FirstOrDefault EF call, so we wrap the status in a Select
+        var data = await _atlasContext.Events.Select(e => new { e.Status }).FirstOrDefaultAsync();
+        if (data is null)
+            return null;
+        return data.Status;
     }
 }

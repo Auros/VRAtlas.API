@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using VRAtlas.Models;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints.Validators;
@@ -22,7 +23,8 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("An event id must be provided.")
             .MustAsync(EnsureEventExistsAsync).WithMessage("Event does not exist.")
-            .MustAsync(EnsureUserCanUpdateEventAsync).WithMessage("Lacking group permissions to update this event.");
+            .MustAsync(EnsureUserCanUpdateEventAsync).WithMessage("Lacking group permissions to update this event.")
+            .MustAsync(EnsureEventIsWritableAsync).WithMessage("Event has been concluded or canceled, it cannot be edited!");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("An event name must be provided.");
@@ -46,6 +48,12 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
     {
         return _eventService.EventExistsAsync(id);
     }
+
+    private async Task<bool> EnsureEventIsWritableAsync(Guid id, CancellationToken _)
+    {
+        return (await _eventService.GetEventStatusAsync(id)) is EventStatus.Unlisted or EventStatus.Announced or EventStatus.Started;
+    }
+
 
     private Task<bool> EnsureValidImageAsync(Guid? resourceId, CancellationToken _)
     {

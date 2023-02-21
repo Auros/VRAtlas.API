@@ -82,6 +82,7 @@ builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name)
 builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOptions.Name).ValidateDataAnnotations();
 
 // Other registration
+builder.Services.AddSignalR();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
@@ -228,6 +229,7 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseVRAtlasEndpoints();
+app.MapHub<AtlasHub>("/hub/atlas");
 
 await app.SeedAtlas();
 

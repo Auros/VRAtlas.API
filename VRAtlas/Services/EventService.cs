@@ -309,9 +309,8 @@ public class EventService : IEventService
                 if (user is null)
                     continue;
 
-                // If they are already in the group, they do not have to go through the invitation process.
-                var roleInEventGroup = await _atlasContext.GroupMembers.Where(gm => gm.Group.Id == atlasEvent.Owner!.Id && gm.User.Id == user.Id).Select(gm => gm.Role).FirstOrDefaultAsync();
-                var status = roleInEventGroup is GroupMemberRole.Standard ? EventStarStatus.Pending : EventStarStatus.Confirmed;
+                // If you are inviting yourself, you don't have to go through the invitation process.
+                var status = updater != star.Star ? EventStarStatus.Pending : EventStarStatus.Confirmed;
 
                 // Add them to the event.
                 EventStar eventStar = new()

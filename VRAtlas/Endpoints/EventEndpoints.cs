@@ -21,7 +21,7 @@ public class EventEndpoints : IEndpointCollection
     public record class UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
 
     [DisplayName("Schedule Event (Body)")]
-    public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant? EndTime);
+    public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant EndTime);
 
     [DisplayName("Upgrade Event Status (Body)")]
     public record class UpgradeEventBody(Guid Id);

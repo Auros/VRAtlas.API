@@ -64,6 +64,7 @@ builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventAnnounceme
 builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventCancellationListener>();
 builder.Services.AddScopedEventListener<EventStarInvitedEvent, EventStarInvitationListener>();
 builder.Services.AddScopedEventListener<EventStarAcceptedInviteEvent, EventStarConfirmationListener>();
+builder.Services.AddScopedEventListener<EventScheduledEvent, EventScheduleSchedulingListener>();
 
 // Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();

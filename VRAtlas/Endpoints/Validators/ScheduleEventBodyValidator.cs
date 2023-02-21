@@ -29,7 +29,8 @@ public class ScheduleEventBodyValidator : AbstractValidator<EventEndpoints.Sched
             .GreaterThan(_ => clock.GetCurrentInstant().Plus(Duration.FromMinutes(1))).WithMessage("Event start time cannot be in the past.");
 
         RuleFor(x => x.EndTime)
-            .GreaterThan(body => body.StartTime).Unless(body => !body.EndTime.HasValue, ApplyConditionTo.CurrentValidator).WithMessage("Event end time must be after the start time.");
+            .NotEmpty().WithMessage("An end time must be provided.")
+            .GreaterThan(body => body.StartTime).WithMessage("Event end time must be after the start time.");
     }
 
     private Task<bool> EnsureEventExistsAsync(Guid id, CancellationToken _)

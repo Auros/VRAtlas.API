@@ -26,6 +26,9 @@ public class EventEndpoints : IEndpointCollection
     [DisplayName("Upgrade Event Status (Body)")]
     public record class UpgradeEventBody(Guid Id);
 
+    [DisplayName("Star Invitation (Body)")]
+    public record class StarInvitationBody(Guid Id);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/events");
@@ -94,6 +97,21 @@ public class EventEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status403Forbidden)
             .RequireAuthorization("update:events")
             .AddValidationFilter<UpgradeEventBody>();
+
+        group.MapPut("/invite/accept", AcceptEventInvite)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .AddValidationFilter<StarInvitationBody>();
+
+        group.MapPut("/invite/reject", RejectEventInvite)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .AddValidationFilter<StarInvitationBody>();
+
         /* End TODO */
     }
 
@@ -103,6 +121,7 @@ public class EventEndpoints : IEndpointCollection
         services.AddScoped<IValidator<UpdateEventBody>, UpdateEventBodyValidator>();
         services.AddScoped<IValidator<UpgradeEventBody>, UpgradeEventBodyValidator>();
         services.AddScoped<IValidator<ScheduleEventBody>, ScheduleEventBodyValidator>();
+        services.AddScoped<IValidator<StarInvitationBody>, StarInvitationBodyValidator>();
     }
 
     public static async Task<IResult> GetEventById(IEventService eventService, Guid id)
@@ -178,6 +197,28 @@ public class EventEndpoints : IEndpointCollection
     public static async Task<IResult> CancelEvent(UpgradeEventBody body, IEventService eventService)
     {
         await eventService.CancelEventAsync(body.Id);
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> AcceptEventInvite(UpgradeEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    {
+        // Get the current user
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return Results.Unauthorized();
+
+        await eventService.AcceptStarInvitationAsync(body.Id, user.Id);
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> RejectEventInvite(UpgradeEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    {
+        // Get the current user
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return Results.Unauthorized();
+
+        await eventService.RejectStarInvitationAsync(body.Id, user.Id);
         return Results.NoContent();
     }
 }

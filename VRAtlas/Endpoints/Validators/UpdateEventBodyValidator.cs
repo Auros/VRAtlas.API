@@ -54,7 +54,6 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
         return (await _eventService.GetEventStatusAsync(id)) is EventStatus.Unlisted or EventStatus.Announced or EventStatus.Started;
     }
 
-
     private Task<bool> EnsureValidImageAsync(Guid? resourceId, CancellationToken _)
     {
         // Image is OK if it's not being updated

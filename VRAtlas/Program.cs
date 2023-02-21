@@ -53,6 +53,7 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();

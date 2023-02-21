@@ -356,7 +356,10 @@ public class EventService : IEventService
     public async Task ConcludeEventAsync(Guid id)
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (atlasEvent is null || atlasEvent.Status is not EventStatus.Started)
+        if (atlasEvent is null)
+            return;
+
+        if (atlasEvent.Status is not EventStatus.Started or EventStatus.Announced)
             return;
 
         atlasEvent.Status = EventStatus.Concluded;
@@ -368,7 +371,10 @@ public class EventService : IEventService
     public async Task CancelEventAsync(Guid id)
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (atlasEvent is null || atlasEvent.Status is not EventStatus.Started)
+        if (atlasEvent is null)
+            return;
+
+        if (atlasEvent.Status is not EventStatus.Started or EventStatus.Announced)
             return;
 
         atlasEvent.Status = EventStatus.Canceled;

@@ -9,6 +9,13 @@ namespace VRAtlas.Services;
 public interface INotificationService
 {
     /// <summary>
+    /// Checks if a notification exists.
+    /// </summary>
+    /// <param name="id">The id of the notification to check.</param>
+    /// <returns>Does the notification exist?</returns>
+    Task<bool> ExistsAsync(Guid id);
+
+    /// <summary>
     /// Marks a notification as "read".
     /// </summary>
     /// <param name="id">The id of the notification</param>
@@ -125,5 +132,10 @@ public class NotificationService : INotificationService
 
         INotificationService.NotificationCollectionQueryResult result = new(notifications, nextCursor, unread);
         return result;
+    }
+
+    public Task<bool> ExistsAsync(Guid id)
+    {
+        return _atlasContext.Notifications.AnyAsync(n => n.Id == id);
     }
 }

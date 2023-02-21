@@ -47,7 +47,7 @@ public interface IEventService
     /// <param name="eventStars">The stars in this event.</param>
     /// <param name="updater">The person updating the group.</param>
     /// <returns>The updated event or null if it doesn't exist.</returns>
-    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater);
+    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart);
 
     /// <summary>
     /// Announces an event.
@@ -229,7 +229,7 @@ public class EventService : IEventService
         return _atlasContext.Events.AnyAsync(e => e.Id == id);
     }
 
-    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater)
+    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart)
     {
         // Pre-create any tags up here.
         // TODO: Reuse the captured ids.
@@ -250,6 +250,7 @@ public class EventService : IEventService
         if (media.HasValue)
             atlasEvent.Media = media.Value;
         atlasEvent.Description = description;
+        atlasEvent.AutoStart = autoStart;
 
         // Load and remove any previous tags.
         var eventTags = await _atlasContext.EventTags.Where(t => t.Event.Id == id).ToArrayAsync();

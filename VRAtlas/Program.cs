@@ -59,6 +59,7 @@ builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
 
 // Event registration
+builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventStartListener>();
 builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventAnnouncementListener>();
 
 // Jwt registration

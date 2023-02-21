@@ -18,7 +18,7 @@ public class EventEndpoints : IEndpointCollection
     public record class CreateEventBody(string Name, Guid Group, Guid Media);
 
     [DisplayName("Update Event (Body)")]
-    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars);
+    public record class UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
 
     [DisplayName("Schedule Event (Body)")]
     public record class ScheduleEventBody(Guid Id, Instant StartTime, Instant? EndTime);
@@ -141,9 +141,9 @@ public class EventEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
-        var (id, name, description, media, tags, stars) = body;
+        var (id, name, description, media, tags, stars, autoStart) = body;
 
-        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id);
+        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart);
 
         return Results.Ok(atlasEvent);
     }

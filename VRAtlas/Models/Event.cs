@@ -32,6 +32,8 @@ public class Event
 
     public Guid Media { get; set; }
 
+    public bool AutoStart { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RSVP? RSVP { get; set; }
 }

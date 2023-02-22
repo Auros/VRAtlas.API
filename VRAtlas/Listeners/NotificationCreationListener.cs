@@ -17,7 +17,7 @@ public class NotificationCreationListener : IScopedEventListener<NotificationCre
     {
         var (notif, user) = message;
 
-        var proxy = _atlasHubContext.Clients.User(user.Id.ToString());
+        var proxy = _atlasHubContext.Clients.User(user.SocialId);
         return proxy.SendAsync("notificationReceived", new
         {
             id = notif.Id,

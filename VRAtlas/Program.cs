@@ -65,6 +65,7 @@ builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventCancellati
 builder.Services.AddScopedEventListener<EventStarInvitedEvent, EventStarInvitationListener>();
 builder.Services.AddScopedEventListener<EventStarAcceptedInviteEvent, EventStarConfirmationListener>();
 builder.Services.AddScopedEventListener<EventScheduledEvent, EventScheduleSchedulingListener>();
+builder.Services.AddScopedEventListener<NotificationCreatedEvent, NotificationCreationListener>();
 
 // Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();
@@ -148,6 +149,17 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         NameClaimType = ClaimTypes.NameIdentifier
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub/atlas"))
+                context.Token = accessToken;
+            return Task.CompletedTask;
+        }
     };
 });
 builder.Services.AddAuthorization(options =>

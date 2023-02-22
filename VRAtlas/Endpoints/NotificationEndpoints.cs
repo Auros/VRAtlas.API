@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel;
 using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
@@ -26,6 +27,11 @@ public class NotificationEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
 
+        group.MapGet("/@me", GetNotificationSettings)
+            .Produces<NotificationMetadata>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization();
+
         group.MapPut("/read", ReadNotification)
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
@@ -46,6 +52,16 @@ public class NotificationEndpoints : IEndpointCollection
 
         var (notifs, outputCursor, unread) = await notificationService.QueryNotificationsAsync(user.Id, cursor, readOnly, size);
         return Results.Ok(new PaginatedNotificationQuery(notifs, outputCursor, unread));
+    }
+
+    public static async Task<IResult> GetNotificationSettings(IUserService userService, AtlasContext atlasContext, ClaimsPrincipal principal) // Only time we directly access the db context
+    {
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return Results.Unauthorized();
+
+        var settings = await atlasContext.Users.AsNoTracking().Where(u => u.Id == user.Id).Select(u => u.DefaultNotificationSettings).FirstAsync();
+        return Results.Ok(settings);
     }
 
     public static async Task<IResult> ReadNotification(NotificationBody body, IUserService userService, INotificationService notificationService, ClaimsPrincipal principal)

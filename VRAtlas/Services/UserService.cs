@@ -47,7 +47,7 @@ public class UserService : IUserService
         }
 
         // Search for users by their username.
-        return await _atlasContext.Users.Where(u => u.Username.ToLower().Contains(search.ToLower())).Take(pageSize).ToArrayAsync();
+        return await _atlasContext.Users.Where(u => u.Username.ToLower().Contains(search.ToLower())).OrderBy(u => u.Id).Take(pageSize).ToArrayAsync();
     }
 
     public async Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, NotificationMetadata notificationMetadata)

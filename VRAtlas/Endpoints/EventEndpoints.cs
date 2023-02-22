@@ -200,7 +200,7 @@ public class EventEndpoints : IEndpointCollection
         return Results.NoContent();
     }
 
-    public static async Task<IResult> AcceptEventInvite(UpgradeEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    public static async Task<IResult> AcceptEventInvite(StarInvitationBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
     {
         // Get the current user
         var user = await userService.GetUserAsync(principal);
@@ -211,7 +211,7 @@ public class EventEndpoints : IEndpointCollection
         return Results.NoContent();
     }
 
-    public static async Task<IResult> RejectEventInvite(UpgradeEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    public static async Task<IResult> RejectEventInvite(StarInvitationBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
     {
         // Get the current user
         var user = await userService.GetUserAsync(principal);

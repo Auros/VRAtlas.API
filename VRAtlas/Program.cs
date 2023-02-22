@@ -37,7 +37,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Setup our logger with Serilog
 var logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Information)
     .Enrich.FromLogContext()
     .WriteTo.Async(options => options.Console())
     .CreateLogger();

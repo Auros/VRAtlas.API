@@ -18,7 +18,8 @@ public class CreateEventBodyValidator : AbstractValidator<EventEndpoints.CreateE
         _httpContextAccessor = httpContextAccessor;
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("An event name must be provided.");
+            .NotEmpty().WithMessage("An event name must be provided.")
+            .MaximumLength(128);
 
         RuleFor(x => x.Group)
             .NotEmpty().WithMessage("A group must be provided.")

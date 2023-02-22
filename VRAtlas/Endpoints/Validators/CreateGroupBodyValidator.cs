@@ -31,7 +31,8 @@ public class CreateGroupBodyValidator : AbstractValidator<GroupEndpoints.CreateG
 
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MustAsync(EnsureUniqueNameAsync).WithMessage("A group with that name already exists.");
+            .MustAsync(EnsureUniqueNameAsync).WithMessage("A group with that name already exists.")
+            .MaximumLength(128);
     }
 
     private async Task<bool> EnsureUniqueNameAsync(string name, CancellationToken _)

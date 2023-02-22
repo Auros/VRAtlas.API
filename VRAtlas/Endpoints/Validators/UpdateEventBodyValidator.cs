@@ -27,7 +27,8 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
             .MustAsync(EnsureEventIsWritableAsync).WithMessage("Event has been concluded or canceled, it cannot be edited!");
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("An event name must be provided.");
+            .NotEmpty().WithMessage("An event name must be provided.")
+            .MaximumLength(128);
 
         RuleFor(x => x.Description)
             .NotNull().WithMessage("A description must be provided.")
@@ -37,11 +38,14 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
             .MustAsync(EnsureValidImageAsync).WithMessage("Invalid icon image resource id.");
 
         RuleFor(x => x.Tags)
-            .Must(t => t.Length <= 50).WithMessage("Cannot have more than 50 tags.")
-            .NotNull().WithMessage("Tags property must be provided.");
+            .Must(x => x.Length <= 50).WithMessage("Cannot have more than 50 tags.")
+            .NotNull().WithMessage("Tags property must be provided.")
+            .Must(x => x.All(tag => tag.Length <= 64)).WithMessage("All tags must individually be less than 64 characters.");
 
         RuleFor(x => x.Stars)
-            .NotNull().WithMessage("Stars property must be provided.");
+            .NotNull().WithMessage("Stars property must be provided.")
+            .Must(x => x.Length <= 25).WithMessage("Cannot have more than 25 event stars")
+            .Must(x => x.All(s => string.IsNullOrWhiteSpace(s.Title) || s.Title.Length <= 64)).WithMessage("All event star titles must individually be under 64 characters.");
     }
 
     private Task<bool> EnsureEventExistsAsync(Guid id, CancellationToken _)

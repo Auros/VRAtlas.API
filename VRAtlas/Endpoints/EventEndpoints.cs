@@ -12,7 +12,7 @@ namespace VRAtlas.Endpoints;
 public class EventEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Event Query")]
-    public record PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next, Guid? Previous);
+    public record PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next);
 
     [DisplayName("Create Event (Body)")]
     public record CreateEventBody(string Name, Guid Group, Guid Media);
@@ -135,14 +135,14 @@ public class EventEndpoints : IEndpointCollection
 
     public static async Task<IResult> GetEvents(IEventService eventService, Guid? cursor, Guid? group, EventStatus? status, int size = 25)
     {
-        var (events, nextCursor, previousCursor) = await eventService.QueryEventsAsync(new()
+        var (events, nextCursor) = await eventService.QueryEventsAsync(new()
         {
             Cursor = cursor,
             Group = group,
             Status = status,
             PageSize = size
         });
-        return Results.Ok(new PaginatedEventQuery(events, nextCursor, previousCursor));
+        return Results.Ok(new PaginatedEventQuery(events, nextCursor));
     }
 
     public static async Task<IResult> CreateEvent(CreateEventBody body, IEventService eventService)

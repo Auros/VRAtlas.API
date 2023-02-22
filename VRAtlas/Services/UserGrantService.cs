@@ -61,6 +61,7 @@ public class UserGrantService : IUserGrantService
                 },
                 DefaultNotificationSettings = new NotificationMetadata
                 {
+                    AtStart = true,
                     AtOneHour = true
                 }
             };

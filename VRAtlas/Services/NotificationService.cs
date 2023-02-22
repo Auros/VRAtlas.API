@@ -106,18 +106,18 @@ public class NotificationService : INotificationService
 
     public async Task<INotificationService.NotificationCollectionQueryResult> QueryNotificationsAsync(Guid userId, Guid? cursor, bool? isRead, int count = 5)
     {
-        var unread = await _atlasContext.Notifications.CountAsync(n => n.Id == userId && !n.Read);
+        var unread = await _atlasContext.Notifications.CountAsync(n => n.UserId == userId && !n.Read);
 
         // Clamp the query if necessary
         count = Math.Clamp(count, 1, 50);
 
-        IQueryable<Notification> query = _atlasContext.Notifications.OrderByDescending(n => n.CreatedAt);
+        IQueryable<Notification> query = _atlasContext.Notifications.Where(n => n.UserId == userId).OrderByDescending(n => n.CreatedAt);
         if (cursor.HasValue)
         {
             // Get the start time of the cursor
             var targetTime = await _atlasContext.Notifications.Where(n => n.Id == cursor.Value).Select(n => n.CreatedAt).FirstOrDefaultAsync();
             if (targetTime != default)
-                query.Where(n => targetTime >= n.CreatedAt);
+                query = query.Where(n => targetTime >= n.CreatedAt);
         }
 
         if (isRead.HasValue)

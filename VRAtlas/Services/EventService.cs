@@ -24,7 +24,7 @@ public interface IEventService
     Task<Event?> GetEventByIdAsync(Guid id);
 
     public record struct EventCollectionQueryOptions(Guid? Cursor, Guid? Group, EventStatus? Status, int PageSize = 25);
-    public record struct EventCollectionQueryResult(IEnumerable<Event> Events, Guid? NextCursor, Guid? PreviousCursor);
+    public record struct EventCollectionQueryResult(IEnumerable<Event> Events, Guid? NextCursor);
     Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options);
 
     /// <summary>
@@ -170,7 +170,6 @@ public class EventService : IEventService
 
     public async Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options)
     {
-        Guid? previous = null;
         var (cursor, group, status, pageSize) = options;
         pageSize = 0 > pageSize ? 25 : pageSize; // Ensure page size is greater than zero
         IQueryable<Event> query = _atlasContext.Events.AsNoTracking().Include(e => e.Tags).ThenInclude(t => t.Tag);
@@ -210,20 +209,7 @@ public class EventService : IEventService
                 cursor = lastEvent.Id;
         }
 
-        if (events.Count > 0)
-        {
-            var firstEvent = events[0];
-
-            // TODO: FIX
-
-            // Queries the last page and gets the id for its first element. 
-            previous = await query
-                .Where(e => e.StartTime > firstEvent.StartTime)
-                .Take(pageSize).Select(e => e.Id)
-                .LastOrDefaultAsync();
-        }
-
-        return new EventCollectionQueryResult(query, cursor, previous);
+        return new EventCollectionQueryResult(query, cursor);
     }
 
     public async Task<Event> CreateEventAsync(string name, Guid ownerId, Guid mediaId)

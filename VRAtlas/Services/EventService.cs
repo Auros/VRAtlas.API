@@ -408,12 +408,13 @@ public class EventService : IEventService
         if (atlasEvent.Status is not EventStatus.Unlisted or EventStatus.Announced)
             return atlasEvent;
 
+        var oldTime = atlasEvent.StartTime;
+
         atlasEvent.EndTime = endTime;
         atlasEvent.StartTime = startTime;
 
         await _atlasContext.SaveChangesAsync();
 
-        var oldTime = atlasEvent.StartTime;
         if (oldTime.HasValue && startTime != oldTime)
         {
             _eventScheduled.Publish(new EventScheduledEvent(id));

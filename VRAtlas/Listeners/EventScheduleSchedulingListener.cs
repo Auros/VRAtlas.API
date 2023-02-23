@@ -10,11 +10,13 @@ namespace VRAtlas.Listeners;
 
 public class EventScheduleSchedulingListener : IScopedEventListener<EventScheduledEvent>
 {
+    private readonly IClock _clock;
     private readonly IEventService _eventService;
     private readonly ISchedulerFactory _schedulerFactory;
 
-    public EventScheduleSchedulingListener(IEventService eventService, ISchedulerFactory schedulerFactory)
+    public EventScheduleSchedulingListener(IClock clock, IEventService eventService, ISchedulerFactory schedulerFactory)
     {
+        _clock = clock;
         _eventService = eventService;
         _schedulerFactory = schedulerFactory;
     }
@@ -68,29 +70,37 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
                 .StartAt(atlasEvent.EndTime.Value.ToDateTimeUtc())
                 .ForJob(EventEndingJob.Key)
                 .UsingJobData(eventDataMap)
-                .Build(),
+                .Build()
+        };
 
+        var now = _clock.GetCurrentInstant();
+        if (atlasEvent.StartTime.Value > now.Plus(Duration.FromMinutes(30)))
+        {
             TriggerBuilder.Create()
-                .WithIdentity(reminderOneDayKey)
-                .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromDays(1)).ToDateTimeUtc())
+                .WithIdentity(reminderThirtyMinutesKey)
+                .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromMinutes(30)).ToDateTimeUtc())
                 .ForJob(EventReminderJob.Key)
-                .UsingJobData(new JobDataMap { { "Event.Id", atlasEvent.Id }, { "Event.Reminder.Mode", (int)EventReminderMode.InOneDay } })
-                .Build(),
-
+                .UsingJobData(new JobDataMap { { "Event.Id", atlasEvent.Id }, { "Event.Reminder.Mode", (int)EventReminderMode.InThirtyMinutes } })
+                .Build();
+        }
+        if (atlasEvent.StartTime.Value > now.Plus(Duration.FromHours(1)))
+        {
             TriggerBuilder.Create()
                 .WithIdentity(reminderOneHourKey)
                 .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromHours(1)).ToDateTimeUtc())
                 .ForJob(EventReminderJob.Key)
                 .UsingJobData(new JobDataMap { { "Event.Id", atlasEvent.Id }, { "Event.Reminder.Mode", (int)EventReminderMode.InOneHour } })
-                .Build(),
-
+                .Build();
+        }
+        if (atlasEvent.StartTime.Value > now.Plus(Duration.FromDays(1)))
+        {
             TriggerBuilder.Create()
-                .WithIdentity(reminderOneHourKey)
-                .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromMinutes(30)).ToDateTimeUtc())
+                .WithIdentity(reminderOneDayKey)
+                .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromDays(1)).ToDateTimeUtc())
                 .ForJob(EventReminderJob.Key)
-                .UsingJobData(new JobDataMap { { "Event.Id", atlasEvent.Id }, { "Event.Reminder.Mode", (int)EventReminderMode.InThirtyMinutes } })
-                .Build(),
-        };
+                .UsingJobData(new JobDataMap { { "Event.Id", atlasEvent.Id }, { "Event.Reminder.Mode", (int)EventReminderMode.InOneDay } })
+                .Build();
+        }
 
         // Schedule the event triggers
         foreach (var trigger in triggers)

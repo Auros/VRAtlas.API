@@ -28,7 +28,7 @@ public class EventReminderJob : IJob
     {
         try
         {
-            var eventId = context.MergedJobDataMap.GetGuid("Event.Id");
+            var eventId = Guid.Parse(context.MergedJobDataMap.GetString("Event.Id")!);
             var mode = (EventReminderMode)context.MergedJobDataMap.GetInt("Event.Reminder.Mode");
 
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);

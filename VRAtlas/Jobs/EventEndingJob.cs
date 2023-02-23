@@ -21,7 +21,7 @@ public class EventEndingJob : IJob
     {
         try
         {
-            var eventId = context.MergedJobDataMap.GetGuid("Event.Id");
+            var eventId = Guid.Parse(context.MergedJobDataMap.GetString("Event.Id")!);
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
 
             // Do not continue if we can't find the event.

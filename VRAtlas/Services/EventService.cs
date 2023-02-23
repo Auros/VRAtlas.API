@@ -280,8 +280,8 @@ public class EventService : IEventService
         if (eventStars.Any())
         {
             var newStarsIds = eventStars.ToArray();
-            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Any(n => n.Star == s.User.Id));
-            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.User.Id == s.Star));
+            var removedStars = atlasEvent.Stars.Where(s => !newStarsIds.Any(n => n.Star == s.User!.Id));
+            var addedStarsIds = newStarsIds.Where(s => !atlasEvent.Stars.Any(es => es.User!.Id == s.Star));
             var existingStars = newStarsIds.Where(s => !addedStarsIds.Contains(s));
 
             // Remove any stars that were removed

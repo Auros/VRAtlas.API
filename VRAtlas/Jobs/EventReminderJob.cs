@@ -34,7 +34,7 @@ public class EventReminderJob : IJob
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
 
             // Do not continue if we can't find the event.
-            if (atlasEvent is null)
+            if (atlasEvent is null || atlasEvent.Status is not EventStatus.Announced)
                 return;
 
             // Fetch the user ids of those who follow this event based on the specific event settings.

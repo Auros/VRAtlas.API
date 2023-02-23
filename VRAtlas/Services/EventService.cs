@@ -405,7 +405,7 @@ public class EventService : IEventService
         if (atlasEvent is null)
             return null;
 
-        if (atlasEvent.Status is not EventStatus.Unlisted or EventStatus.Announced)
+        if (atlasEvent.Status is not EventStatus.Unlisted && atlasEvent.Status is not EventStatus.Announced)
             return atlasEvent;
 
         var oldTime = atlasEvent.StartTime;

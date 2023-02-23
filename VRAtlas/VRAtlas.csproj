@@ -7,7 +7,7 @@
     <UserSecretsId>57411b3c-70ed-4e1b-9554-e87920c4e595</UserSecretsId>
     <ContainerImageName>vratlas.api</ContainerImageName>
     <PublishProfile>DefaultContainer</PublishProfile>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(GITHUB_ACTIONS)' == 'true'">linux-x64</RuntimeIdentifier>
     <ContainerImageTags>1.0.0;latest</ContainerImageTags>
   </PropertyGroup>
 

@@ -38,8 +38,11 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Format Image Name
+      run: |
+        echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: dotnet publish -c Release -p:ContainerImageName=${{ env.IMAGE_NAME }}
+      run: dotnet publish -c Release -p:ContainerImageName=${{ env.TARGET_IMAGE_NAME }}
     - name: Publish Image
-      run: docker push ${{ env.IMAGE_NAME }} --all-tags
+      run: docker push ${{ env.TARGET_IMAGE_NAME }} --all-tags

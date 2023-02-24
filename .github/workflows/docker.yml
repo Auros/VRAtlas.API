@@ -30,7 +30,7 @@ jobs:
       - build
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v30
     - name: Registry Login
       uses: docker/login-action@v2
       with:
@@ -42,7 +42,7 @@ jobs:
         echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: docker build ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} -f ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:main
+      run: docker build -t ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:main .
     - name: Publish Image
       run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} --all-tags
   docker-arm:
@@ -64,6 +64,6 @@ jobs:
         echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: docker build -f Dockerfile.alpine-arm64 ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} -f ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64
+      run: docker build -t ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64 -f Dockerfile.alpine-arm64 .
     - name: Publish Image
       run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} --all-tags

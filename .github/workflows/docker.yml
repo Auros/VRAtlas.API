@@ -42,9 +42,9 @@ jobs:
         echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: docker build ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:x64
+      run: docker build ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} -f ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:main
     - name: Publish Image
-      run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:x64
+      run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} --all-tags
   docker-arm:
     name: Upload (ARM)
     runs-on: ubuntu-latest
@@ -64,6 +64,6 @@ jobs:
         echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: docker build -f Dockerfile.alpine-arm64 ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64
+      run: docker build -f Dockerfile.alpine-arm64 ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} -f ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64
     - name: Publish Image
-      run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64
+      run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} --all-tags

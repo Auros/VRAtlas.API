@@ -3,7 +3,7 @@ API for the VRAtlas - The open source hub to find new events occurring in virtua
 
 ## Live
 
-The API is live at [vratlas.io/api/swagger](https://vratlas.io/api/swagger)
+The API is live at [api.vratlas.io/swagger](https://api.vratlas.io/swagger)
 
 ## Setup Guide
 TODO

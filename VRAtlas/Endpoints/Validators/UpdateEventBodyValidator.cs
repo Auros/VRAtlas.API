@@ -55,7 +55,8 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
 
     private async Task<bool> EnsureEventIsWritableAsync(Guid id, CancellationToken _)
     {
-        return (await _eventService.GetEventStatusAsync(id)) is EventStatus.Unlisted or EventStatus.Announced or EventStatus.Started;
+        var eventStatus = await _eventService.GetEventStatusAsync(id);
+        return eventStatus == EventStatus.Announced || eventStatus == EventStatus.Unlisted || eventStatus == EventStatus.Started;
     }
 
     private Task<bool> EnsureValidImageAsync(Guid? resourceId, CancellationToken _)

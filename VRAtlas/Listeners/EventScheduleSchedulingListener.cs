@@ -3,6 +3,7 @@ using Quartz;
 using VRAtlas.Core.Models;
 using VRAtlas.Events;
 using VRAtlas.Jobs;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 using VRAtlas.Services;
 
@@ -11,12 +12,14 @@ namespace VRAtlas.Listeners;
 public class EventScheduleSchedulingListener : IScopedEventListener<EventScheduledEvent>
 {
     private readonly IClock _clock;
+    private readonly IAtlasLogger _logger;
     private readonly IEventService _eventService;
     private readonly ISchedulerFactory _schedulerFactory;
 
-    public EventScheduleSchedulingListener(IClock clock, IEventService eventService, ISchedulerFactory schedulerFactory)
+    public EventScheduleSchedulingListener(IClock clock, IAtlasLogger<EventScheduleSchedulingListener> logger, IEventService eventService, ISchedulerFactory schedulerFactory)
     {
         _clock = clock;
+        _logger = logger;
         _eventService = eventService;
         _schedulerFactory = schedulerFactory;
     }
@@ -26,10 +29,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
         var id = message.Id;
 
         // Get the event from the subject
-        var atlasEvent = await _eventService.GetEventByIdAsync(message.Id);
-
-        if (atlasEvent is null)
-            throw new Exception($"Unable to find event with id {message.Id}. This should not happen.");
+        var atlasEvent = await _eventService.GetEventByIdAsync(message.Id) ?? throw new Exception($"Unable to find event with id {message.Id}. This should not happen.");
 
         if (!atlasEvent.StartTime.HasValue || !atlasEvent.EndTime.HasValue)
             return;
@@ -104,6 +104,10 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
 
         // Schedule the event triggers
         foreach (var trigger in triggers)
+        {
+            _logger.LogInformation("Scheduling Trigger {TriggerName} for Event {AtlasEventId}", trigger.Key.Name, atlasEvent.Id);
             await scheduler.ScheduleJob(trigger);
+        }
+            
     }
 }

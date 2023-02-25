@@ -37,7 +37,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Setup our logger with Serilog
 var logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Information)
+    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Async(options => options.Console())
     .CreateLogger();

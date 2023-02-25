@@ -409,13 +409,14 @@ public class EventService : IEventService
             return atlasEvent;
 
         var oldTime = atlasEvent.StartTime;
+        var oldEndTime = atlasEvent.EndTime;
 
         atlasEvent.EndTime = endTime;
         atlasEvent.StartTime = startTime;
 
         await _atlasContext.SaveChangesAsync();
 
-        if (oldTime.HasValue && startTime != oldTime)
+        if ((oldTime.HasValue || oldEndTime.HasValue) && (startTime != oldTime || endTime != oldEndTime))
         {
             _eventScheduled.Publish(new EventScheduledEvent(id));
         }
@@ -470,7 +471,7 @@ public class EventService : IEventService
     public async Task<EventStatus?> GetEventStatusAsync(Guid id)
     {
         // You cannot get nullable primitives from a FirstOrDefault EF call, so we wrap the status in a Select
-        var data = await _atlasContext.Events.Select(e => new { e.Status }).FirstOrDefaultAsync();
+        var data = await _atlasContext.Events.Where(e => e.Id == id).Select(e => new { e.Status }).FirstOrDefaultAsync();
         if (data is null)
             return null;
         return data.Status;

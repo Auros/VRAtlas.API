@@ -5,7 +5,7 @@ namespace VRAtlas.Models.DTO;
 public class EventStarDTO
 {
     [JsonPropertyName("user")]
-    public required User User { get; init; }
+    public required UserDTO User { get; init; }
 
     [JsonPropertyName("title")]
     public string? Title { get; init; }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
@@ -15,10 +14,8 @@ public class Event
     public string Description { get; set; } = string.Empty;
 
     [Required]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Group? Owner { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<EventStar> Stars { get; set; } = null!;
 
     public EventStatus Status { get; set; }
@@ -27,13 +24,11 @@ public class Event
 
     public Instant? EndTime { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<EventTag> Tags { get; set; } = null!;
 
     public Guid Media { get; set; }
 
     public bool AutoStart { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RSVP? RSVP { get; set; }
 }

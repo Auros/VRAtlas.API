@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
@@ -13,7 +12,6 @@ public class Group
 
     public string Description { get; set; } = null!;
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public IList<GroupMember> Members { get; set; } = null!;
 
     public Guid Icon { get; set; }

@@ -24,7 +24,7 @@ The configuration file `appsettings.json, secrets.json, etc.` is as follows:
   },
   "Auth0": {
     "Domain": "https://your-tenant.region.auth0.com/", // Make sure that it begins with the protocol ("https://") and ends with the forward slash ("/")
-    "Audience: "<YOUR AUDIENCE>", // The Auth0 API Identifier, or audience.
+    "Audience": "<YOUR AUDIENCE>", // The Auth0 API Identifier, or audience.
     "ClientId": "<YOUR AUTH0 APPLICATION CLIENT ID>",
     "ClientSecret": "<YOUR AUTH0 APPLICATION CLIENT SECRET>"
   },

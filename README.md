@@ -7,7 +7,7 @@ The API is live at [api.vratlas.io/swagger](https://api.vratlas.io/swagger)
 
 ## Requesting Features
 
-If you're wanting to request a feature for just the website or a feature that requires updating **both** the website and the API, go to [https://github.com/Auros/VRAtlas.Web](VRAtlas.Web) and create an issue there.
+If you're wanting to request a feature for just the website or a feature that requires updating **both** the website and the API, go to [VRAtlas.Web](https://github.com/Auros/VRAtlas.Web) and create an issue there.
 
 If you're just exclusively requesting a feature or making an issue related to the **API**, make it here.
 

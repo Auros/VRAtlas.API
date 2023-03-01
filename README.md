@@ -22,6 +22,7 @@ For development and deployment, you need a few third party services. In the futu
 You will also need these dependencies
 * .NET 7 SDK
 * PostgreSQL (14 or Later, Multiple Databases Required)
+* Docker (For Running Tests)
 
 The configuration file `appsettings.json, secrets.json, etc.` is as follows:
 ```jsonc

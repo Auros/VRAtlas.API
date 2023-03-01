@@ -4,6 +4,7 @@ using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
+using VRAtlas.Models.DTO;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -25,14 +26,14 @@ public class GroupEndpoints : IEndpointCollection
         group.WithTags("Groups");
 
         group.MapGet("/{id:guid}", GetGroupById)
-            .Produces<Group>(StatusCodes.Status200OK);
+            .Produces<GroupDTO>(StatusCodes.Status200OK);
 
         group.MapGet("/user/{id:guid}", GetUserGroups)
-            .Produces<IEnumerable<Group>>(StatusCodes.Status200OK)
+            .Produces<IEnumerable<GroupDTO>>(StatusCodes.Status200OK)
             .WithTags("Groups");
 
         group.MapPost("/", CreateGroup)
-            .Produces<Group>(StatusCodes.Status201Created)
+            .Produces<GroupDTO>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -40,7 +41,7 @@ public class GroupEndpoints : IEndpointCollection
             .AddValidationFilter<CreateGroupBody>();
 
         group.MapPut("/", UpdateGroup)
-            .Produces<Group>(StatusCodes.Status200OK)
+            .Produces<GroupDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -48,7 +49,7 @@ public class GroupEndpoints : IEndpointCollection
             .AddValidationFilter<UpdateGroupBody>();
 
         group.MapPut("/members/add", AddMemberToGroup)
-            .Produces<Group>(StatusCodes.Status200OK)
+            .Produces<GroupDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -56,7 +57,7 @@ public class GroupEndpoints : IEndpointCollection
             .AddValidationFilter<MutateGroupMemberBody>();
 
         group.MapPut("/members/remove", RemoveMemberFromGroup)
-            .Produces<Group>(StatusCodes.Status200OK)
+            .Produces<GroupDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -77,13 +78,13 @@ public class GroupEndpoints : IEndpointCollection
         if (group is null)
             return Results.NotFound();
 
-        return Results.Ok(group);
+        return Results.Ok(group.Map());
     }
 
     private static async Task<IResult> GetUserGroups(Guid id, IGroupService groupService)
     {
         var groups = await groupService.GetAllUserGroupsAsync(id);
-        return Results.Ok(groups);
+        return Results.Ok(groups.Map());
     }
 
     private static async Task<IResult> CreateGroup(CreateGroupBody body, IGroupService groupService, IUserService userService, ClaimsPrincipal principal)
@@ -103,20 +104,20 @@ public class GroupEndpoints : IEndpointCollection
     {
         var (id, description, icon, banner) = body;
         var group = await groupService.ModifyGroupAsync(id, description, icon, banner);
-        return Results.Ok(group);
+        return Results.Ok(group.Map());
     }
 
     private static async Task<IResult> AddMemberToGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService)
     {
         var (id, userId, role) = body;
         var group = await groupService.AddGroupMemberAsync(id, userId, role ?? GroupMemberRole.Standard);
-        return Results.Ok(group);
+        return Results.Ok(group.Map());
     }
 
     private static async Task<IResult> RemoveMemberFromGroup(MutateGroupMemberBody body, IGroupService groupService, IUserService userService)
     {
         var (id, userId, _) = body;
         var group = await groupService.RemoveGroupMemberAsync(id, userId);
-        return Results.Ok(group);
+        return Results.Ok(group.Map());
     }
 }

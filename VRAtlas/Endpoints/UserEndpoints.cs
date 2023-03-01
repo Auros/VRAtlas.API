@@ -5,6 +5,7 @@ using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
+using VRAtlas.Models.DTO;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -12,7 +13,7 @@ namespace VRAtlas.Endpoints;
 public class UserEndpoints : IEndpointCollection
 {
     [DisplayName("Update User (Body)")]
-    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationMetadata Notifications);
+    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -20,19 +21,19 @@ public class UserEndpoints : IEndpointCollection
         group.WithTags("Users");
 
         group.MapGet("/@me", GetAuthUser)
-            .Produces<User>(StatusCodes.Status200OK)
+            .Produces<UserDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
 
         group.MapGet("/{id:guid}", GetUserById)
-            .Produces<User>(StatusCodes.Status200OK)
+            .Produces<UserDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
         group.MapGet("/search", SearchForUsers)
-            .Produces<IEnumerable<User>>(StatusCodes.Status200OK);
+            .Produces<IEnumerable<UserDTO>>(StatusCodes.Status200OK);
 
         group.MapPut("/@me", EditAuthUser)
-            .Produces<User>(StatusCodes.Status200OK)
+            .Produces<UserDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization()
@@ -50,7 +51,7 @@ public class UserEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
-        return Results.Ok(user);
+        return Results.Ok(user.Map());
     }
 
     private static async Task<IResult> GetUserById(IUserService userService, Guid id, ClaimsPrincipal principal)
@@ -59,27 +60,34 @@ public class UserEndpoints : IEndpointCollection
         if (user is null)
             return Results.NotFound();
 
-        return Results.Ok(user);
+        return Results.Ok(user.Map());
     }
 
     private static async Task<IResult> SearchForUsers(ClaimsPrincipal principal, IUserService userService, [FromQuery] string? query = null)
     {
         // If the search parameter has nothing.
         if (string.IsNullOrWhiteSpace(query))
-            return Results.Ok(Array.Empty<User>());
+            return Results.Ok(Array.Empty<UserDTO>());
 
         var users = await userService.GetUsersAsync(query);
 
-        return Results.Ok(users);
+        return Results.Ok(users.Map());
     }
 
     private static async Task<IResult> EditAuthUser(UpdateUserBody body, IUserService userService, ClaimsPrincipal principal)
     {
-        var (bio, links, notifs) = body;
-        var user = await userService.EditUserAsync(principal, bio, links, notifs);
+        var (bio, links, notif) = body;
+        var user = await userService.EditUserAsync(principal, bio, links, new NotificationMetadata
+        {
+            AtThirtyMinutes = notif.AtThirtyMinutes,
+            AtStart = notif.AtStart,
+            AtOneHour = notif.AtOneHour,
+            AtOneDay = notif.AtOneDay,
+        });
+
         if (user is null)
             return Results.Unauthorized();
 
-        return Results.Ok(user);
+        return Results.Ok(user.Map());
     }
 }

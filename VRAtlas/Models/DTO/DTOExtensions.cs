@@ -77,6 +77,29 @@ public static class DTOExtensions
         };
     }
 
+    public static NotificationInfoDTO Map(this NotificationMetadata meta)
+    {
+        return new NotificationInfoDTO
+        {
+            AtStart = meta.AtStart,
+            AtOneDay = meta.AtOneDay,
+            AtOneHour = meta.AtOneHour,
+            AtThirtyMinutes = meta.AtThirtyMinutes,
+        };
+    }
+
+    public static FollowDTO Map(this Follow follow)
+    {
+        return new FollowDTO
+        {
+            UserId = follow.UserId,
+            EntityId = follow.EntityId,
+            EntityType = follow.EntityType,
+            FollowedAt = follow.FollowedAt,
+            Metadata = follow.Metadata.Map()
+        };
+    }
+
     public static IEnumerable<GroupMemberDTO> Map(this IEnumerable<GroupMember>? groupMembers)
     {
         if (groupMembers is null || !groupMembers.Any())
@@ -98,4 +121,31 @@ public static class DTOExtensions
         return tags.Select(t => t.Tag.Name);
     }
 
+    public static IEnumerable<EventDTO> Map(this IEnumerable<Event>? events)
+    {
+        if (events is null || !events.Any())
+            return Enumerable.Empty<EventDTO>();
+        return events.Select(e => e.Map());
+    }
+
+    public static IEnumerable<GroupDTO> Map(this IEnumerable<Group>? groups)
+    {
+        if (groups is null || !groups.Any())
+            return Enumerable.Empty<GroupDTO>();
+        return groups.Select(g => g.Map());
+    }
+
+    public static IEnumerable<NotificationDTO> Map(this IEnumerable<Notification>? notifs)
+    {
+        if (notifs is null || !notifs.Any())
+            return Enumerable.Empty<NotificationDTO>();
+        return notifs.Select(n => n.Map());
+    }
+
+    public static IEnumerable<UserDTO> Map(this IEnumerable<User>? users)
+    {
+        if (users is null || !users.Any())
+            return Enumerable.Empty<UserDTO>();
+        return users.Select(n => n.Map());
+    }
 }

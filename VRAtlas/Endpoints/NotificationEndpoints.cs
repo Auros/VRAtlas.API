@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
-using VRAtlas.Models;
+using VRAtlas.Models.DTO;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -12,7 +12,7 @@ namespace VRAtlas.Endpoints;
 public class NotificationEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Notification Query")]
-    public record PaginatedNotificationQuery(IEnumerable<Notification> Notifications, Guid? Next, int Unread);
+    public record PaginatedNotificationQuery(IEnumerable<NotificationDTO> Notifications, Guid? Next, int Unread);
 
     [DisplayName("Notification (Body)")]
     public record NotificationBody(Guid Id);
@@ -28,7 +28,7 @@ public class NotificationEndpoints : IEndpointCollection
             .RequireAuthorization();
 
         group.MapGet("/@me", GetNotificationSettings)
-            .Produces<NotificationMetadata>(StatusCodes.Status200OK)
+            .Produces<NotificationInfoDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization();
 
@@ -51,7 +51,7 @@ public class NotificationEndpoints : IEndpointCollection
             return Results.Unauthorized();
 
         var (notifs, outputCursor, unread) = await notificationService.QueryNotificationsAsync(user.Id, cursor, readOnly, size);
-        return Results.Ok(new PaginatedNotificationQuery(notifs, outputCursor, unread));
+        return Results.Ok(new PaginatedNotificationQuery(notifs.Map(), outputCursor, unread));
     }
 
     public static async Task<IResult> GetNotificationSettings(IUserService userService, AtlasContext atlasContext, ClaimsPrincipal principal) // Only time we directly access the db context
@@ -61,7 +61,7 @@ public class NotificationEndpoints : IEndpointCollection
             return Results.Unauthorized();
 
         var settings = await atlasContext.Users.AsNoTracking().Where(u => u.Id == user.Id).Select(u => u.DefaultNotificationSettings).FirstAsync();
-        return Results.Ok(settings);
+        return Results.Ok(settings!.Map());
     }
 
     public static async Task<IResult> ReadNotification(NotificationBody body, IUserService userService, INotificationService notificationService, ClaimsPrincipal principal)

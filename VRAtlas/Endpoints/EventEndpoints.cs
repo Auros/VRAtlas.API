@@ -5,6 +5,7 @@ using System.Security.Claims;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
+using VRAtlas.Models.DTO;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -12,7 +13,7 @@ namespace VRAtlas.Endpoints;
 public class EventEndpoints : IEndpointCollection
 {
     [DisplayName("Paginated Event Query")]
-    public record PaginatedEventQuery(IEnumerable<Event> Events, Guid? Next);
+    public record PaginatedEventQuery(IEnumerable<EventDTO> Events, Guid? Next);
 
     [DisplayName("Create Event (Body)")]
     public record CreateEventBody(string Name, Guid Group, Guid Media);
@@ -35,13 +36,13 @@ public class EventEndpoints : IEndpointCollection
         group.WithTags("Events");
 
         group.MapGet("/{id:guid}", GetEventById)
-            .Produces<Event>(StatusCodes.Status200OK);
+            .Produces<EventDTO>(StatusCodes.Status200OK);
 
         group.MapGet("/", GetEvents)
             .Produces<PaginatedEventQuery>(StatusCodes.Status200OK);
 
         group.MapPost("/", CreateEvent)
-            .Produces<Event>(StatusCodes.Status201Created)
+            .Produces<EventDTO>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -49,7 +50,7 @@ public class EventEndpoints : IEndpointCollection
             .AddValidationFilter<CreateEventBody>();
 
         group.MapPut("/", UpdateEvent)
-            .Produces<Event>(StatusCodes.Status200OK)
+            .Produces<EventDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -57,7 +58,7 @@ public class EventEndpoints : IEndpointCollection
             .AddValidationFilter<UpdateEventBody>();
 
         group.MapPut("/schedule", ScheduleEvent)
-            .Produces<Event>(StatusCodes.Status200OK)
+            .Produces<EventDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
@@ -142,7 +143,7 @@ public class EventEndpoints : IEndpointCollection
             Status = status,
             PageSize = size
         });
-        return Results.Ok(new PaginatedEventQuery(events, nextCursor));
+        return Results.Ok(new PaginatedEventQuery(events.Map(), nextCursor));
     }
 
     public static async Task<IResult> CreateEvent(CreateEventBody body, IEventService eventService)
@@ -151,7 +152,7 @@ public class EventEndpoints : IEndpointCollection
 
         var atlasEvent = await eventService.CreateEventAsync(name, groupId, mediaId);
 
-        return Results.Created($"/events/{atlasEvent.Id}", atlasEvent);
+        return Results.Created($"/events/{atlasEvent.Id}", atlasEvent.Map());
     }
 
     public static async Task<IResult> UpdateEvent(UpdateEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
@@ -164,7 +165,7 @@ public class EventEndpoints : IEndpointCollection
 
         var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart);
 
-        return Results.Ok(atlasEvent);
+        return Results.Ok(atlasEvent!.Map());
     }
 
     public static async Task<IResult> ScheduleEvent(ScheduleEventBody body, IEventService eventService)
@@ -173,7 +174,7 @@ public class EventEndpoints : IEndpointCollection
 
         var atlasEvent = await eventService.ScheduleEventAsync(id, startTime, endTime);
 
-        return Results.Ok(atlasEvent);
+        return Results.Ok(atlasEvent!.Map());
     }
 
     public static async Task<IResult> AnnounceEvent(UpgradeEventBody body, IEventService eventService)

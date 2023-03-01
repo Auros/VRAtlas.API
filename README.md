@@ -64,6 +64,7 @@ Note: Cloudflare Images is a paid service. At the time of writing it costs $5.00
 2. Navigate to your [Cloudflare Profile's API Tokens](https://dash.cloudflare.com/profile/api-tokens)
 3. Create a new token using the template for R/W Access to Cloudflare Images or create a custom token with an Account permission for Cloudflare Images with Read and Edit enabled. Record the value of the token. This is your API Key.
 4. Navigate to the Cloudflare Images dashboard, and record the values of `Account ID` and `Account Hash` for later.
+5. Create Five variants, `mini`, `small`, `medium`, `large`, and `full`. The live version of VRAtlas uses `Fit: Scale down` and `Metadata: Strip all metadata` for all variants and the sizes of 64x64, 256x256, 512x512, 1024x1024, and 2048x2048 respectively.
 
 Add the `Account ID` and API Key to your configuration file.
 

@@ -1,7 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using VRAtlas.Attributes;
 
 namespace VRAtlas.Models.DTO;
 
+[VisualName("Group Member")]
 public class GroupMemberDTO
 {
     [JsonPropertyName("user")]

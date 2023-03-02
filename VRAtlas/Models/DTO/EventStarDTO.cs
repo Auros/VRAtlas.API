@@ -1,7 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using VRAtlas.Attributes;
 
 namespace VRAtlas.Models.DTO;
 
+[VisualName("Event Star")]
 public class EventStarDTO
 {
     [JsonPropertyName("user")]

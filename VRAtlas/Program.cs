@@ -14,12 +14,12 @@ using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
-using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using VRAtlas;
+using VRAtlas.Attributes;
 using VRAtlas.Authorization;
 using VRAtlas.Converters;
 using VRAtlas.Core;
@@ -28,7 +28,6 @@ using VRAtlas.Events;
 using VRAtlas.Jobs;
 using VRAtlas.Listeners;
 using VRAtlas.Logging;
-using VRAtlas.Models;
 using VRAtlas.Options;
 using VRAtlas.Services;
 
@@ -97,23 +96,7 @@ builder.Services.AddDbContext<AtlasContext>((container, options) =>
 builder.Services.AddSwaggerGen(options =>
 {
     // TODO: Move into separate file
-    options.CustomSchemaIds(selector =>
-    {
-        // Since we're using the DisplayName attribute, we need to map the enums separately.
-        // TODO: Switch to using a custom attribute that supports enums
-        if (selector.IsEnum)
-        {
-            if (selector == typeof(EventStatus))
-                return "Event Status";
-
-            if (selector == typeof(EventStarStatus))
-                return "Event Star Status";
-
-            if (selector == typeof(GroupMemberRole))
-                return "Group Member Role";
-        }
-        return selector.GetCustomAttributes<DisplayNameAttribute>().FirstOrDefault()?.DisplayName ?? selector.Name;
-    });
+    options.CustomSchemaIds(selector => selector.GetCustomAttributes<VisualNameAttribute>().FirstOrDefault()?.Name ?? selector.Name);
     options.ConfigureForNodaTimeWithSystemTextJson();
 
     OpenApiSecurityScheme securityScheme = new()

@@ -1,7 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using VRAtlas.Attributes;
 
 namespace VRAtlas.Models.DTO;
 
+[VisualName("User")]
 public class UserDTO
 {
     [JsonPropertyName("id")]
@@ -15,4 +17,7 @@ public class UserDTO
 
     [JsonPropertyName("biography")]
     public string? Biography { get; init; }
+
+    [JsonPropertyName("links")]
+    public IEnumerable<string> Links { get; init; } = Enumerable.Empty<string>();
 }

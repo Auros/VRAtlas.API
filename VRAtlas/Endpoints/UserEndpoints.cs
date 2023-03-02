@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
@@ -12,7 +12,7 @@ namespace VRAtlas.Endpoints;
 
 public class UserEndpoints : IEndpointCollection
 {
-    [DisplayName("Update User (Body)")]
+    [VisualName("Update User (Body)")]
     public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)

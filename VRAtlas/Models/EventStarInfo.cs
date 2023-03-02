@@ -1,5 +1,8 @@
-﻿namespace VRAtlas.Models;
+﻿using VRAtlas.Attributes;
 
+namespace VRAtlas.Models;
+
+[VisualName("Event Star Info")]
 public class EventStarInfo
 {
     public Guid Star { get; set; }

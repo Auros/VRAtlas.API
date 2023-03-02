@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
@@ -11,13 +11,13 @@ namespace VRAtlas.Endpoints;
 
 public class GroupEndpoints : IEndpointCollection
 {
-    [DisplayName("Create Group (Body)")]
+    [VisualName("Create Group (Body)")]
     public record CreateGroupBody(string Name, string Description, Guid Icon, Guid Banner);
 
-    [DisplayName("Update Group (Body)")]
+    [VisualName("Update Group (Body)")]
     public record UpdateGroupBody(Guid Id, string Description, Guid? Icon, Guid? Banner);
 
-    [DisplayName("Update Group Member (Body)")]
+    [VisualName("Update Group Member (Body)")]
     public record MutateGroupMemberBody(Guid Id, Guid UserId, GroupMemberRole? Role);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)

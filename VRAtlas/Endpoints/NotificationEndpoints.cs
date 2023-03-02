@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models.DTO;
@@ -11,10 +11,10 @@ namespace VRAtlas.Endpoints;
 
 public class NotificationEndpoints : IEndpointCollection
 {
-    [DisplayName("Paginated Notification Query")]
+    [VisualName("Paginated Notification Query")]
     public record PaginatedNotificationQuery(IEnumerable<NotificationDTO> Notifications, Guid? Next, int Unread);
 
-    [DisplayName("Notification (Body)")]
+    [VisualName("Notification (Body)")]
     public record NotificationBody(Guid Id);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)

@@ -26,6 +26,8 @@ public static class DTOExtensions
         {
             Id = group.Id,
             Name = group.Name,
+            Icon = group.Icon,
+            Banner = group.Banner,
             Description = group.Description,
             Members = group.Members.Map(),
         };
@@ -45,6 +47,7 @@ public static class DTOExtensions
         return new UserDTO
         {
             Id = user.Id,
+            Links = user.Links,
             Picture = user.Picture,
             Username = user.Username,
             Biography = user.Biography,

@@ -1,9 +1,7 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace VRAtlas.Models;
 
-[DisplayName("Notification Info")]
 public class NotificationMetadata
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

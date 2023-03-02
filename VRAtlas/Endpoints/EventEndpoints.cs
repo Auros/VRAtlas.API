@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using NodaTime;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
@@ -12,22 +12,22 @@ namespace VRAtlas.Endpoints;
 
 public class EventEndpoints : IEndpointCollection
 {
-    [DisplayName("Paginated Event Query")]
+    [VisualName("Paginated Event Query")]
     public record PaginatedEventQuery(IEnumerable<EventDTO> Events, Guid? Next);
 
-    [DisplayName("Create Event (Body)")]
+    [VisualName("Create Event (Body)")]
     public record CreateEventBody(string Name, Guid Group, Guid Media);
 
-    [DisplayName("Update Event (Body)")]
+    [VisualName("Update Event (Body)")]
     public record UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
 
-    [DisplayName("Schedule Event (Body)")]
+    [VisualName("Schedule Event (Body)")]
     public record ScheduleEventBody(Guid Id, Instant StartTime, Instant EndTime);
 
-    [DisplayName("Upgrade Event Status (Body)")]
+    [VisualName("Upgrade Event Status (Body)")]
     public record UpgradeEventBody(Guid Id);
 
-    [DisplayName("Star Invitation (Body)")]
+    [VisualName("Star Invitation (Body)")]
     public record StarInvitationBody(Guid Id);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
@@ -131,7 +131,7 @@ public class EventEndpoints : IEndpointCollection
         if (atlasEvent is null)
             return Results.NotFound();
 
-        return Results.Ok(atlasEvent);
+        return Results.Ok(atlasEvent.Map());
     }
 
     public static async Task<IResult> GetEvents(IEventService eventService, Guid? cursor, Guid? group, EventStatus? status, int size = 25)

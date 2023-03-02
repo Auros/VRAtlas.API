@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
@@ -11,9 +11,10 @@ namespace VRAtlas.Endpoints;
 
 public class FollowEndpoints : IEndpointCollection
 {
-    [DisplayName("Follow Entity (Body)")]
+    [VisualName("Follow Entity (Body)")]
     public record FollowEntityBody(Guid Id, EntityType Type, NotificationInfoDTO Metadata);
 
+    [VisualName("Follow Status")]
     public record FollowStatus(bool Status);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)

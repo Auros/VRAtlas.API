@@ -1,8 +1,8 @@
-﻿using System.ComponentModel;
+﻿using VRAtlas.Attributes;
 
 namespace VRAtlas.Models;
 
-[DisplayName("API Status")]
+[VisualName("API Status")]
 public class ApiStatus
 {
     public required string Status { get; init; }

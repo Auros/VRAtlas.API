@@ -1,8 +1,10 @@
 ﻿using NodaTime;
 using System.Text.Json.Serialization;
+using VRAtlas.Attributes;
 
 namespace VRAtlas.Models.DTO;
 
+[VisualName("Follow")]
 public class FollowDTO
 {
     [JsonPropertyName("userId")]

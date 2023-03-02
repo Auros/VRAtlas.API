@@ -1,18 +1,20 @@
 ﻿using FluentValidation;
-using System.ComponentModel;
 using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models;
+using VRAtlas.Models.DTO;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
 
 public class FollowEndpoints : IEndpointCollection
 {
-    [DisplayName("Follow Entity (Body)")]
-    public record FollowEntityBody(Guid Id, EntityType Type, NotificationMetadata Metadata);
+    [VisualName("Follow Entity (Body)")]
+    public record FollowEntityBody(Guid Id, EntityType Type, NotificationInfoDTO Metadata);
 
+    [VisualName("Follow Status")]
     public record FollowStatus(bool Status);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
@@ -26,7 +28,7 @@ public class FollowEndpoints : IEndpointCollection
             .RequireAuthorization();
 
         group.MapPost("/", FollowEntity)
-            .Produces<Follow>(StatusCodes.Status200OK)
+            .Produces<FollowDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization()
@@ -62,9 +64,15 @@ public class FollowEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
-        var follow = await followService.FollowAsync(user.Id, id, type, notif);
+        var follow = await followService.FollowAsync(user.Id, id, type, new NotificationMetadata
+        {
+            AtThirtyMinutes = notif.AtThirtyMinutes,
+            AtStart = notif.AtStart,
+            AtOneHour = notif.AtOneHour,
+            AtOneDay = notif.AtOneDay,
+        });
 
-        return Results.Ok(follow);
+        return Results.Ok(follow.Map());
     }
 
     private static async Task<IResult> UnfollowEntity(Guid id, IUserService userService, IFollowService followService, ClaimsPrincipal principal)

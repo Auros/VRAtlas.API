@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Services;
 
@@ -7,7 +7,7 @@ namespace VRAtlas.Endpoints;
 
 public class UploadEndpoints : IEndpointCollection
 {
-    [DisplayName("Upload URL")]
+    [VisualName("Upload URL")]
     public record UploadUrlBody(Uri UploadUrl);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)

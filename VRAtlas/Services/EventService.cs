@@ -397,6 +397,8 @@ public class EventService : IEventService
             .Include(e => e.Tags)
                 .ThenInclude(e => e.Tag)
             .Include(e => e.Owner)
+                .ThenInclude(g => g!.Members)
+                    .ThenInclude(m => m.User)
             .Include(e => e.Stars)
                 .ThenInclude(es => es.User)
             .AsSplitQuery()

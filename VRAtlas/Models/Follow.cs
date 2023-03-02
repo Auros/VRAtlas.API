@@ -1,12 +1,10 @@
 ﻿using NodaTime;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace VRAtlas.Models;
 
 public class Follow
 {
-    [JsonIgnore]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 

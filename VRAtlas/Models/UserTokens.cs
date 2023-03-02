@@ -1,9 +1,9 @@
-﻿using System.ComponentModel;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+using VRAtlas.Attributes;
 
 namespace VRAtlas.Models;
 
-[DisplayName("User Tokens")]
+[VisualName("User Tokens")]
 public class UserTokens
 {
     [JsonPropertyName("idToken")]
@@ -18,6 +18,6 @@ public class UserTokens
     /// <summary>
     /// In Seconds
     /// </summary>
-    [JsonPropertyName("expires_in")]
+    [JsonPropertyName("expiresIn")]
     public int ExpiresIn { get; set; }
 }

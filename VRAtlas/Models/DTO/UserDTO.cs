@@ -7,7 +7,7 @@ public class UserDTO
     [JsonPropertyName("id")]
     public required Guid Id { get; init; }
 
-    [JsonPropertyName("name")]
+    [JsonPropertyName("username")]
     public required string Username { get; init; }
 
     [JsonPropertyName("picture")]

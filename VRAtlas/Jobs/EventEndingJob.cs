@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Microsoft.AspNetCore.OutputCaching;
+using Quartz;
 using VRAtlas.Logging;
 using VRAtlas.Services;
 
@@ -10,11 +11,13 @@ public class EventEndingJob : IJob
 
     private readonly IAtlasLogger _atlasLogger;
     private readonly IEventService _eventService;
+    private readonly IOutputCacheStore _outputCacheStore;
 
-    public EventEndingJob(IAtlasLogger<EventEndingJob> atlasLogger, IEventService eventService)
+    public EventEndingJob(IAtlasLogger<EventEndingJob> atlasLogger, IEventService eventService, IOutputCacheStore outputCacheStore)
     {
         _atlasLogger = atlasLogger;
         _eventService = eventService;
+        _outputCacheStore = outputCacheStore;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -30,6 +33,7 @@ public class EventEndingJob : IJob
 
             // Conclude the event.
             await _eventService.ConcludeEventAsync(atlasEvent.Id);
+            await _outputCacheStore.EvictByTagAsync("events", default);
         }
         catch (Exception e)
         {

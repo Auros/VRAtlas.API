@@ -14,6 +14,7 @@ using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
+using StackExchange.Redis;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Claims;
@@ -21,7 +22,7 @@ using System.Text;
 using VRAtlas;
 using VRAtlas.Attributes;
 using VRAtlas.Authorization;
-using VRAtlas.Converters;
+using VRAtlas.Caching;
 using VRAtlas.Core;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Events;
@@ -88,10 +89,15 @@ builder.Services.AddSignalR();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IConnectionMultiplexer>(services => ConnectionMultiplexer.Connect(services.GetRequiredService<IConfiguration>().GetConnectionString("Redis")!));
 builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {
     var connString = container.GetRequiredService<IConfiguration>().GetConnectionString("Main") ?? string.Empty;
     options.UseNpgsql(connString, npgsqlOptions => npgsqlOptions.UseNodaTime());
+});
+builder.Services.AddRedisOutputCache(options =>
+{
+    options.AddPolicy(CacheConstants.FiveMinutes, policy => policy.Expire(TimeSpan.FromMinutes(5)));
 });
 builder.Services.AddSwaggerGen(options =>
 {
@@ -156,6 +162,7 @@ builder.Services.AddAuthorization(options =>
         "update:groups",
         "create:events",
         "update:events",
+        "admin:clear"
 
     });
 });
@@ -205,7 +212,6 @@ builder.Services.AddQuartzServer(options =>
 });
 builder.Services.Configure<JsonOptions>(options =>
 {
-    options.SerializerOptions.Converters.Add(new WritableTagModelJsonConverter());
     options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 });
 
@@ -225,6 +231,7 @@ app.UseSwagger(options =>
 app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseOutputCache();
 app.UseVRAtlasEndpoints();
 app.MapHub<AtlasHub>("/hub/atlas");
 

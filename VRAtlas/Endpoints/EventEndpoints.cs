@@ -1,4 +1,6 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using System.Security.Claims;
 using VRAtlas.Attributes;
@@ -30,6 +32,9 @@ public class EventEndpoints : IEndpointCollection
     [VisualName("Star Invitation (Body)")]
     public record StarInvitationBody(Guid Id);
 
+    [VisualName("Event Summaries")]
+    public record EventSummaries(IEnumerable<EventDTO> Live, IEnumerable<EventDTO> Upcoming, IEnumerable<EventDTO> Past);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/events");
@@ -39,7 +44,8 @@ public class EventEndpoints : IEndpointCollection
             .Produces<EventDTO>(StatusCodes.Status200OK);
 
         group.MapGet("/", GetEvents)
-            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK);
+            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK)
+            .CacheOutput(p => p.Expire(TimeSpan.FromHours(1)).SetVaryByQuery(new string[] { "cursor", "group", "status", "size" }).Tag("events"));
 
         group.MapPost("/", CreateEvent)
             .Produces<EventDTO>(StatusCodes.Status201Created)
@@ -114,6 +120,10 @@ public class EventEndpoints : IEndpointCollection
             .AddValidationFilter<StarInvitationBody>();
 
         /* End TODO */
+
+        group.MapGet("/summaries", Summaries)
+            .Produces<EventSummaries>(StatusCodes.Status200OK)
+            .CacheOutput(p => p.Expire(TimeSpan.FromHours(1)).Tag("events"));
     }
 
     public static void AddServices(IServiceCollection services)
@@ -155,7 +165,7 @@ public class EventEndpoints : IEndpointCollection
         return Results.Created($"/events/{atlasEvent.Id}", atlasEvent.Map());
     }
 
-    public static async Task<IResult> UpdateEvent(UpdateEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal)
+    public static async Task<IResult> UpdateEvent(UpdateEventBody body, IUserService userService, IEventService eventService, ClaimsPrincipal principal, IOutputCacheStore cache, CancellationToken token)
     {
         var user = await userService.GetUserAsync(principal);
         if (user is null)
@@ -165,39 +175,47 @@ public class EventEndpoints : IEndpointCollection
 
         var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart);
 
+        await cache.EvictByTagAsync("events", token);
+
         return Results.Ok(atlasEvent!.Map());
     }
 
-    public static async Task<IResult> ScheduleEvent(ScheduleEventBody body, IEventService eventService)
+    public static async Task<IResult> ScheduleEvent(ScheduleEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         var (id, startTime, endTime) = body;
 
         var atlasEvent = await eventService.ScheduleEventAsync(id, startTime, endTime);
 
+        await cache.EvictByTagAsync("events", token);
+
         return Results.Ok(atlasEvent!.Map());
     }
 
-    public static async Task<IResult> AnnounceEvent(UpgradeEventBody body, IEventService eventService)
+    public static async Task<IResult> AnnounceEvent(UpgradeEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         await eventService.AnnounceEventAsync(body.Id);
+        await cache.EvictByTagAsync("events", token);
         return Results.NoContent();
     }
 
-    public static async Task<IResult> StartEvent(UpgradeEventBody body, IEventService eventService)
+    public static async Task<IResult> StartEvent(UpgradeEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         await eventService.StartEventAsync(body.Id);
+        await cache.EvictByTagAsync("events", token);
         return Results.NoContent();
     }
 
-    public static async Task<IResult> ConcludeEvent(UpgradeEventBody body, IEventService eventService)
+    public static async Task<IResult> ConcludeEvent(UpgradeEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         await eventService.ConcludeEventAsync(body.Id);
+        await cache.EvictByTagAsync("events", token);
         return Results.NoContent();
     }
 
-    public static async Task<IResult> CancelEvent(UpgradeEventBody body, IEventService eventService)
+    public static async Task<IResult> CancelEvent(UpgradeEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         await eventService.CancelEventAsync(body.Id);
+        await cache.EvictByTagAsync("events", token);
         return Results.NoContent();
     }
 
@@ -221,5 +239,17 @@ public class EventEndpoints : IEndpointCollection
 
         await eventService.RejectStarInvitationAsync(body.Id, user.Id);
         return Results.NoContent();
+    }
+
+    // A special endpoint for the front page of the website. Heavily cached with event data.
+    public static async Task<IResult> Summaries(AtlasContext atlasContext)
+    {
+        IQueryable<Event> Query(EventStatus status) => atlasContext.Events.Include(e => e.Tags).Where(e => e.Status == status).Take(6);
+
+        var live = await Query(EventStatus.Started).OrderBy(e => e.StartTime).ToArrayAsync();
+        var upcoming = await Query(EventStatus.Announced).OrderBy(e => e.StartTime).ToArrayAsync();
+        var past = await Query(EventStatus.Concluded).OrderByDescending(e => e.EndTime).ToArrayAsync();
+
+        return Results.Ok(new EventSummaries(live.Map(), upcoming.Map(), past.Map()));
     }
 }

@@ -23,6 +23,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly CloudflareApiServer _cloudflareApiServer;
     private readonly PostgreSqlTestcontainer _mainDatabaseContainer;
     private readonly PostgreSqlTestcontainer _quartzDatabaseContainer;
+    private readonly IContainer _redisContainer;
     private readonly Auth0Options _auth0Options = new()
     {
         ClientId = nameof(VRAtlas),
@@ -58,6 +59,12 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
             })
             .Build();
 #pragma warning restore 618
+
+        _redisContainer = new ContainerBuilder()
+            .WithName(Guid.NewGuid().ToString("D"))
+            .WithImage("redis")
+            .WithPortBinding(6379, true)
+            .Build();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -77,6 +84,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 { "Auth0:ClientSecret", _auth0Options.ClientSecret },
                 { "ConnectionStrings:Main", _mainDatabaseContainer.ConnectionString },
                 { "ConnectionStrings:Quartz", _quartzDatabaseContainer.ConnectionString },
+                { "ConnectionStrings:Redis", $"localhost:{_redisContainer.GetMappedPublicPort(6379)}" }
             });
         });
 
@@ -104,7 +112,8 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         _auth0Options.Domain = _auth0ApiServer.Url;
         _auth0ApiServer.Configure("mycode", "vratlas.test|123456", _auth0Options.Audience, _auth0Options.ClientId, _auth0Options.ClientSecret, "https://redirect.vratlas.io/api/auth/callback");
         _cloudflareApiServer.Configure("abcdefghijklmnopqrstuvwxyz");
-        
+
+        await _redisContainer.StartAsync();
         await _mainDatabaseContainer.StartAsync();
         await _quartzDatabaseContainer.StartAsync();
 
@@ -116,6 +125,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         _auth0ApiServer.Dispose();
         _cloudflareApiServer.Dispose();
+        await _redisContainer.StopAsync();
         await _mainDatabaseContainer.StopAsync();
         await _quartzDatabaseContainer.StopAsync();
     }

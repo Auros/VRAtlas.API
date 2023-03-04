@@ -20,6 +20,8 @@ public class User
 
     public string SocialId { get; set; } = null!;
 
+    public ProfileStatus ProfileStatus { get; set; }
+
     [Required]
     public UserMetadata? Metadata { get; set; }
 

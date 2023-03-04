@@ -13,7 +13,7 @@ namespace VRAtlas.Endpoints;
 public class UserEndpoints : IEndpointCollection
 {
     [VisualName("Update User (Body)")]
-    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications);
+    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications, ProfileStatus ProfileStatus);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -76,8 +76,8 @@ public class UserEndpoints : IEndpointCollection
 
     private static async Task<IResult> EditAuthUser(UpdateUserBody body, IUserService userService, ClaimsPrincipal principal)
     {
-        var (bio, links, notif) = body;
-        var user = await userService.EditUserAsync(principal, bio, links, new NotificationMetadata
+        var (bio, links, notif, profileStatus) = body;
+        var user = await userService.EditUserAsync(principal, bio, links, profileStatus, new NotificationMetadata
         {
             AtThirtyMinutes = notif.AtThirtyMinutes,
             AtStart = notif.AtStart,

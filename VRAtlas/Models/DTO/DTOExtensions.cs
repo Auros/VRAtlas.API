@@ -51,6 +51,7 @@ public static class DTOExtensions
             Picture = user.Picture,
             Username = user.Username,
             Biography = user.Biography,
+            ProfileStatus = user.ProfileStatus
         };
     }
 

@@ -86,7 +86,6 @@ builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOpt
 
 // Other registration
 builder.Services.AddSignalR();
-builder.Services.AddRedisOutputCache();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
@@ -95,6 +94,10 @@ builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {
     var connString = container.GetRequiredService<IConfiguration>().GetConnectionString("Main") ?? string.Empty;
     options.UseNpgsql(connString, npgsqlOptions => npgsqlOptions.UseNodaTime());
+});
+builder.Services.AddRedisOutputCache(options =>
+{
+    options.AddPolicy(CacheConstants.FiveMinutes, policy => policy.Expire(TimeSpan.FromMinutes(5)));
 });
 builder.Services.AddSwaggerGen(options =>
 {
@@ -159,6 +162,7 @@ builder.Services.AddAuthorization(options =>
         "update:groups",
         "create:events",
         "update:events",
+        "admin:clear"
 
     });
 });

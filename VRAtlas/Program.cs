@@ -206,7 +206,6 @@ builder.Services.AddQuartzServer(options =>
 });
 builder.Services.Configure<JsonOptions>(options =>
 {
-    options.SerializerOptions.Converters.Add(new WritableTagModelJsonConverter());
     options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 });
 

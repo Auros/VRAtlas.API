@@ -14,6 +14,7 @@ using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
 using Serilog.Events;
+using StackExchange.Redis;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Claims;
@@ -21,7 +22,7 @@ using System.Text;
 using VRAtlas;
 using VRAtlas.Attributes;
 using VRAtlas.Authorization;
-using VRAtlas.Converters;
+using VRAtlas.Caching;
 using VRAtlas.Core;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Events;
@@ -85,10 +86,11 @@ builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOpt
 
 // Other registration
 builder.Services.AddSignalR();
-builder.Services.AddOutputCache();
+builder.Services.AddRedisOutputCache();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IConnectionMultiplexer>(services => ConnectionMultiplexer.Connect(services.GetRequiredService<IConfiguration>().GetConnectionString("Redis")!));
 builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {
     var connString = container.GetRequiredService<IConfiguration>().GetConnectionString("Main") ?? string.Empty;

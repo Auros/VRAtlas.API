@@ -75,7 +75,7 @@ public class ProfileService : IProfileService
             .Where(f => f.UserId == userId && f.EntityType == EntityType.User)
             .OrderByDescending(f => f.FollowedAt);
 
-        return GetUsersFromQueryAsync(query, cursor, count);
+        return GetUsersFromQueryAsync(query, cursor, count, true);
     }
 
     public async Task<IProfileService.GroupCollectionQueryResult> GetGroupFollowingAsync(Guid userId, int? cursor, int count = 6)
@@ -109,7 +109,7 @@ public class ProfileService : IProfileService
         return new IProfileService.GroupCollectionQueryResult(sortedGroups, nextCursor);
     }
 
-    private async Task<IProfileService.UserCollectionQueryResult> GetUsersFromQueryAsync(IQueryable<Follow> query, int? cursor, int count)
+    private async Task<IProfileService.UserCollectionQueryResult> GetUsersFromQueryAsync(IQueryable<Follow> query, int? cursor, int count, bool useEntityId = false)
     {
         if (cursor.HasValue)
         {
@@ -123,10 +123,11 @@ public class ProfileService : IProfileService
         var follows = await query.Take(count + 1).Select(f => new
         {
             f.Id,
-            f.UserId
+            f.UserId,
+            f.EntityId
         }).ToListAsync();
 
-        var followerIds = follows.Select(f => f.UserId).ToList();
+        var followerIds = follows.Select(f => useEntityId ? f.EntityId : f.UserId).ToList();
         var users = await _atlasContext.Users.AsNoTracking().Where(u => followerIds.Contains(u.Id)).ToListAsync();
         int? nextCursor = follows.Count > count ? follows[^1].Id : null;
 

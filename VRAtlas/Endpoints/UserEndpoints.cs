@@ -15,6 +15,12 @@ public class UserEndpoints : IEndpointCollection
     [VisualName("Update User (Body)")]
     public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications, ProfileStatus ProfileStatus);
 
+    [VisualName("Profile Metadata")]
+    public record ProfileMetadata(int Followers, int Following);
+
+    [VisualName("Paginated User Query")]
+    public record PaginatedUserQuery(IEnumerable<UserDTO> Users, int? Next);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/users");
@@ -38,6 +44,18 @@ public class UserEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization()
             .AddValidationFilter<UpdateUserBody>();
+
+        group.MapGet("/{id:guid}/profile", GetProfileMetadata)
+            .Produces<ProfileMetadata>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/followers", GetUserFollowers)
+            .Produces<PaginatedUserQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/following", GetUserFollowing)
+            .Produces<PaginatedUserQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     public static void AddServices(IServiceCollection services)
@@ -89,5 +107,59 @@ public class UserEndpoints : IEndpointCollection
             return Results.Unauthorized();
 
         return Results.Ok(user.Map());
+    }
+
+    private static async Task<IResult> GetProfileMetadata(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal)
+    {
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (followers, following) = await profileService.GetProfileMetadataAsync(id);
+        return Results.Ok(new ProfileMetadata(followers, following));
+    }
+
+    private static async Task<IResult> GetUserFollowers(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    {
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (users, newCursor) = await profileService.GetUserFollowersAsync(id, cursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), newCursor));
+    }
+
+    private static async Task<IResult> GetUserFollowing(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    {
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (users, newCursor) = await profileService.GetUserFollowingAsync(id, cursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), newCursor));
     }
 }

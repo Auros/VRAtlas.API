@@ -21,6 +21,9 @@ public class UserEndpoints : IEndpointCollection
     [VisualName("Paginated User Query")]
     public record PaginatedUserQuery(IEnumerable<UserDTO> Users, int? Next);
 
+    [VisualName("Paginated Group Query")]
+    public record PaginatedGroupQuery(IEnumerable<GroupDTO> Groups, int? Next);
+
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/users");
@@ -55,6 +58,10 @@ public class UserEndpoints : IEndpointCollection
 
         group.MapGet("/{id:guid}/profile/following", GetUserFollowing)
             .Produces<PaginatedUserQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/groups", GetUserGroups)
+            .Produces<PaginatedGroupQuery>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
     }
 
@@ -141,8 +148,8 @@ public class UserEndpoints : IEndpointCollection
                 return Results.Unauthorized();
         }
 
-        var (users, newCursor) = await profileService.GetUserFollowersAsync(id, cursor, 25);
-        return Results.Ok(new PaginatedUserQuery(users.Map(), newCursor));
+        var (users, nextCursor) = await profileService.GetUserFollowersAsync(id, cursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor));
     }
 
     private static async Task<IResult> GetUserFollowing(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
@@ -159,7 +166,25 @@ public class UserEndpoints : IEndpointCollection
                 return Results.Unauthorized();
         }
 
-        var (users, newCursor) = await profileService.GetUserFollowingAsync(id, cursor, 25);
-        return Results.Ok(new PaginatedUserQuery(users.Map(), newCursor));
+        var (users, nextCursor) = await profileService.GetUserFollowingAsync(id, cursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor));
+    }
+
+    private static async Task<IResult> GetUserGroups(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    {
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (groups, nextCursor) = await profileService.GetGroupFollowingAsync(id, cursor, 12);
+        return Results.Ok(new PaginatedGroupQuery(groups.Map(), nextCursor));
     }
 }

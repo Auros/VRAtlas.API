@@ -96,10 +96,10 @@ public class ProfileService : IProfileService
         var follows = await query.Take(count + 1).Select(f => new
         {
             f.Id,
-            f.UserId
+            f.EntityId
         }).ToListAsync();
 
-        var followerIds = follows.Select(f => f.UserId).ToList();
+        var followerIds = follows.Select(f => f.EntityId).ToList();
         var groups = await _atlasContext.Groups.AsNoTracking().Where(u => followerIds.Contains(u.Id)).ToListAsync();
         int? nextCursor = follows.Count > count ? follows[^1].Id : null;
 

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using HashidsNet;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using VRAtlas.Attributes;
@@ -13,7 +14,16 @@ namespace VRAtlas.Endpoints;
 public class UserEndpoints : IEndpointCollection
 {
     [VisualName("Update User (Body)")]
-    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications);
+    public record UpdateUserBody(string Biography, IEnumerable<string> Links, NotificationInfoDTO Notifications, ProfileStatus ProfileStatus);
+
+    [VisualName("Profile Metadata")]
+    public record ProfileMetadata(int Followers, int Following);
+
+    [VisualName("Paginated User Query")]
+    public record PaginatedUserQuery(IEnumerable<UserDTO> Users, string? Next);
+
+    [VisualName("Paginated Group Query")]
+    public record PaginatedGroupQuery(IEnumerable<GroupDTO> Groups, string? Next);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -38,6 +48,22 @@ public class UserEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization()
             .AddValidationFilter<UpdateUserBody>();
+
+        group.MapGet("/{id:guid}/profile", GetProfileMetadata)
+            .Produces<ProfileMetadata>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/followers", GetUserFollowers)
+            .Produces<PaginatedUserQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/following", GetUserFollowing)
+            .Produces<PaginatedUserQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id:guid}/profile/groups", GetUserGroups)
+            .Produces<PaginatedGroupQuery>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     public static void AddServices(IServiceCollection services)
@@ -76,8 +102,8 @@ public class UserEndpoints : IEndpointCollection
 
     private static async Task<IResult> EditAuthUser(UpdateUserBody body, IUserService userService, ClaimsPrincipal principal)
     {
-        var (bio, links, notif) = body;
-        var user = await userService.EditUserAsync(principal, bio, links, new NotificationMetadata
+        var (bio, links, notif, profileStatus) = body;
+        var user = await userService.EditUserAsync(principal, bio, links, profileStatus, new NotificationMetadata
         {
             AtThirtyMinutes = notif.AtThirtyMinutes,
             AtStart = notif.AtStart,
@@ -89,5 +115,92 @@ public class UserEndpoints : IEndpointCollection
             return Results.Unauthorized();
 
         return Results.Ok(user.Map());
+    }
+
+    private static async Task<IResult> GetProfileMetadata(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal)
+    {
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (followers, following) = await profileService.GetProfileMetadataAsync(id);
+        return Results.Ok(new ProfileMetadata(followers, following));
+    }
+
+    private static async Task<IResult> GetUserFollowers(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
+    {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (users, nextCursor) = await profileService.GetUserFollowersAsync(id, decodedCursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
+    }
+
+    private static async Task<IResult> GetUserFollowing(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
+    {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (users, nextCursor) = await profileService.GetUserFollowingAsync(id, decodedCursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
+    }
+
+    private static async Task<IResult> GetUserGroups(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
+    {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
+        var targetUser = await userService.GetUserAsync(id);
+        if (targetUser is null)
+            return Results.NotFound();
+
+        // Check if the user's profile info is private, reject the request if necessary.
+        if (targetUser.ProfileStatus is ProfileStatus.Private)
+        {
+            var currentUser = await userService.GetUserAsync(principal);
+            if (currentUser?.Id != targetUser.Id)
+                return Results.Unauthorized();
+        }
+
+        var (groups, nextCursor) = await profileService.GetGroupFollowingAsync(id, decodedCursor, 12);
+        return Results.Ok(new PaginatedGroupQuery(groups.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
     }
 }

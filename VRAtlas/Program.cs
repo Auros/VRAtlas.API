@@ -1,3 +1,4 @@
+using HashidsNet;
 using LitJWT;
 using LitJWT.Algorithms;
 using MessagePipe;
@@ -54,6 +55,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IFollowService, FollowService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -89,6 +91,7 @@ builder.Services.AddSignalR();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<Hashids>(services => new(services.GetRequiredService<IConfiguration>().GetRequiredSection("VRAtlas").GetValue<string>("Salt"), 11));
 builder.Services.AddSingleton<IConnectionMultiplexer>(services => ConnectionMultiplexer.Connect(services.GetRequiredService<IConfiguration>().GetConnectionString("Redis")!));
 builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {

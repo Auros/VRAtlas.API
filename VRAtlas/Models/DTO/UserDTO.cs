@@ -20,4 +20,7 @@ public class UserDTO
 
     [JsonPropertyName("links")]
     public IEnumerable<string> Links { get; init; } = Enumerable.Empty<string>();
+
+    [JsonPropertyName("profileStatus")]
+    public ProfileStatus ProfileStatus { get; init; }
 }

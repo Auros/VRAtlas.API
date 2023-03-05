@@ -9,7 +9,7 @@ public interface IUserService
     Task<User?> GetUserAsync(Guid id);
     Task<User?> GetUserAsync(ClaimsPrincipal principal);
     Task<IEnumerable<User>> GetUsersAsync(string search);
-    Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, NotificationMetadata notificationMetadata);
+    Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, ProfileStatus profileStatus, NotificationMetadata notificationMetadata);
 }
 
 public class UserService : IUserService
@@ -50,7 +50,7 @@ public class UserService : IUserService
         return await _atlasContext.Users.Where(u => u.Username.ToLower().Contains(search.ToLower())).OrderBy(u => u.Id).Take(pageSize).ToArrayAsync();
     }
 
-    public async Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, NotificationMetadata notificationMetadata)
+    public async Task<User?> EditUserAsync(ClaimsPrincipal principal, string bio, IEnumerable<string> links, ProfileStatus profileStatus, NotificationMetadata notificationMetadata)
     {
         var socialId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -63,6 +63,7 @@ public class UserService : IUserService
         
         user.Biography = bio;
         user.Links = links.ToList();
+        user.ProfileStatus = profileStatus;
         user.DefaultNotificationSettings!.AtStart = notificationMetadata.AtStart;
         user.DefaultNotificationSettings!.AtThirtyMinutes = notificationMetadata.AtThirtyMinutes;
         user.DefaultNotificationSettings!.AtOneHour = notificationMetadata.AtOneHour;

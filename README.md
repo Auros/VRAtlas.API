@@ -1,5 +1,5 @@
 # VRAtlas.API
-API for the VRAtlas - The open source hub to find new events occurring in virtual reality.
+API for the VRAtlas - The open source hub to find new events in virtual reality.
 
 ## Live
 
@@ -42,6 +42,9 @@ The configuration file `appsettings.json, secrets.json, etc.` is as follows:
   "Cloudflare": {
     "ApiUrl": "https://api.cloudflare.com/client/v4/accounts/<YOUR ACCOUNT ID>", // VRAtlas.API uses v4 of the Cloudflare API
     "ApiKey": "<YOUR API KEY>"
+  },
+  "VRAtlas": {
+    "Salt": "<secret string>" // Used for generating salts for ID generation 
   }
 }
 ```

@@ -111,7 +111,7 @@ public class NotificationService : INotificationService
         // Clamp the query if necessary
         count = Math.Clamp(count, 1, 50);
 
-        IQueryable<Notification> query = _atlasContext.Notifications.Where(n => n.UserId == userId).OrderByDescending(n => n.CreatedAt);
+        IQueryable<Notification> query = _atlasContext.Notifications.AsNoTracking().Where(n => n.UserId == userId).OrderByDescending(n => n.CreatedAt);
         if (cursor.HasValue)
         {
             // Get the start time of the cursor

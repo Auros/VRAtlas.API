@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using HashidsNet;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using VRAtlas.Attributes;
@@ -19,10 +20,10 @@ public class UserEndpoints : IEndpointCollection
     public record ProfileMetadata(int Followers, int Following);
 
     [VisualName("Paginated User Query")]
-    public record PaginatedUserQuery(IEnumerable<UserDTO> Users, int? Next);
+    public record PaginatedUserQuery(IEnumerable<UserDTO> Users, string? Next);
 
     [VisualName("Paginated Group Query")]
-    public record PaginatedGroupQuery(IEnumerable<GroupDTO> Groups, int? Next);
+    public record PaginatedGroupQuery(IEnumerable<GroupDTO> Groups, string? Next);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -134,8 +135,13 @@ public class UserEndpoints : IEndpointCollection
         return Results.Ok(new ProfileMetadata(followers, following));
     }
 
-    private static async Task<IResult> GetUserFollowers(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    private static async Task<IResult> GetUserFollowers(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
     {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
         var targetUser = await userService.GetUserAsync(id);
         if (targetUser is null)
             return Results.NotFound();
@@ -148,12 +154,17 @@ public class UserEndpoints : IEndpointCollection
                 return Results.Unauthorized();
         }
 
-        var (users, nextCursor) = await profileService.GetUserFollowersAsync(id, cursor, 25);
-        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor));
+        var (users, nextCursor) = await profileService.GetUserFollowersAsync(id, decodedCursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
     }
 
-    private static async Task<IResult> GetUserFollowing(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    private static async Task<IResult> GetUserFollowing(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
     {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
         var targetUser = await userService.GetUserAsync(id);
         if (targetUser is null)
             return Results.NotFound();
@@ -166,12 +177,17 @@ public class UserEndpoints : IEndpointCollection
                 return Results.Unauthorized();
         }
 
-        var (users, nextCursor) = await profileService.GetUserFollowingAsync(id, cursor, 25);
-        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor));
+        var (users, nextCursor) = await profileService.GetUserFollowingAsync(id, decodedCursor, 25);
+        return Results.Ok(new PaginatedUserQuery(users.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
     }
 
-    private static async Task<IResult> GetUserGroups(Guid id, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, int? cursor = null)
+    private static async Task<IResult> GetUserGroups(Guid id, Hashids hashids, IUserService userService, IProfileService profileService, ClaimsPrincipal principal, string? cursor = null)
     {
+        int? decodedCursor = null;
+        if (cursor != null)
+            if (hashids.TryDecodeSingle(cursor, out var val))
+                decodedCursor = val;
+
         var targetUser = await userService.GetUserAsync(id);
         if (targetUser is null)
             return Results.NotFound();
@@ -184,7 +200,7 @@ public class UserEndpoints : IEndpointCollection
                 return Results.Unauthorized();
         }
 
-        var (groups, nextCursor) = await profileService.GetGroupFollowingAsync(id, cursor, 12);
-        return Results.Ok(new PaginatedGroupQuery(groups.Map(), nextCursor));
+        var (groups, nextCursor) = await profileService.GetGroupFollowingAsync(id, decodedCursor, 12);
+        return Results.Ok(new PaginatedGroupQuery(groups.Map(), nextCursor.HasValue ? hashids.Encode(nextCursor.Value) : null));
     }
 }

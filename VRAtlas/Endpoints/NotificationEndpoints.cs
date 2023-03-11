@@ -5,6 +5,7 @@ using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
 using VRAtlas.Models.DTO;
+using VRAtlas.Options;
 using VRAtlas.Services;
 
 namespace VRAtlas.Endpoints;
@@ -16,6 +17,9 @@ public class NotificationEndpoints : IEndpointCollection
 
     [VisualName("Notification (Body)")]
     public record NotificationBody(Guid Id);
+
+    [VisualName("Web Push Subscription (Body)")]
+    public record WebPushSubscriptionBody(Uri Endpoint, IDictionary<string, string> Keys);
 
     public static void BuildEndpoints(IEndpointRouteBuilder app)
     {
@@ -37,6 +41,20 @@ public class NotificationEndpoints : IEndpointCollection
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization()
             .AddValidationFilter<NotificationBody>();
+
+        // Only enable these endpoints if WebPush is configured
+        if (app.ServiceProvider.GetRequiredService<IConfiguration>().GetSection(WebPushOptions.Name).Exists())
+        {
+            group.MapPost("/web", RegisterWebPushNotification)
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .RequireAuthorization();
+
+            group.MapDelete("/web", UnregisterWebPushNotification)
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .RequireAuthorization();
+        }
     }
 
     public static void AddServices(IServiceCollection services)
@@ -75,5 +93,22 @@ public class NotificationEndpoints : IEndpointCollection
             return Results.NotFound();
 
         return Results.NoContent();
+    }
+
+    public static async Task<IResult> RegisterWebPushNotification(WebPushSubscriptionBody body, IUserService userService, IPushNotificationService pushNotificationService, ClaimsPrincipal principal)
+    {
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return Results.Unauthorized();
+
+        var (endpoint, keys) = body;
+        await pushNotificationService.SubscribeAsync(user.Id, endpoint.ToString(), keys["p256dh"], keys["auth"]); 
+        return Results.NoContent();
+    }
+
+    public static async Task<IResult> UnregisterWebPushNotification(string endpoint, IPushNotificationService pushNotificationService)
+    {
+        var result = await pushNotificationService.UnsubscribeAsync(endpoint);
+        return result ? Results.NoContent() : Results.NotFound();
     }
 }

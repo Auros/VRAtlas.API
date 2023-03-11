@@ -104,7 +104,7 @@ public class GroupEndpoints : IEndpointCollection
 
         var group = await groupService.CreateGroupAsync(name, description, icon, banner, user.Id);
 
-        return Results.Created($"/groups/{group.Id}", group);
+        return Results.Created($"/groups/{group.Id}", group.Map());
     }
 
     private static async Task<IResult> UpdateGroup(UpdateGroupBody body, IGroupService groupService, IUserService userService)

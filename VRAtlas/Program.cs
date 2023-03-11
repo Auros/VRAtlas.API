@@ -58,6 +58,7 @@ builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
 
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IImageCdnService, CloudflareImageCdnService>();
@@ -69,7 +70,7 @@ builder.Services.AddScopedEventListener<EventStatusUpdatedEvent, EventCancellati
 builder.Services.AddScopedEventListener<EventStarInvitedEvent, EventStarInvitationListener>();
 builder.Services.AddScopedEventListener<EventStarAcceptedInviteEvent, EventStarConfirmationListener>();
 builder.Services.AddScopedEventListener<EventScheduledEvent, EventScheduleSchedulingListener>();
-builder.Services.AddScopedEventListener<NotificationCreatedEvent, NotificationCreationListener>();
+builder.Services.AddScopedEventListener<NotificationCreatedEvent, HubNotificationCreationListener>();
 
 // Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();
@@ -217,6 +218,16 @@ builder.Services.Configure<JsonOptions>(options =>
 {
     options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 });
+if (builder.Configuration.GetSection(WebPushOptions.Name).Exists())
+{
+    var webPush = builder.Configuration.GetSection(WebPushOptions.Name).Get<WebPushOptions>()!;
+    builder.Services.AddScopedEventListener<NotificationCreatedEvent, PushNotificationCreationListener>();
+    builder.Services.AddPushServiceClient(options =>
+    {
+        options.PublicKey = webPush.PublicKey;
+        options.PrivateKey = webPush.PrivateKey;
+    });
+}
 
 var app = builder.Build();
 

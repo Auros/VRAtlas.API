@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 using System.Security.Claims;
 using VRAtlas.Attributes;
@@ -44,8 +45,7 @@ public class EventEndpoints : IEndpointCollection
             .Produces<EventDTO>(StatusCodes.Status200OK);
 
         group.MapGet("/", GetEvents)
-            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK)
-            .CacheOutput(p => p.Expire(TimeSpan.FromHours(1)).SetVaryByQuery(new string[] { "cursor", "group", "status", "size" }).Tag("events"));
+            .Produces<PaginatedEventQuery>(StatusCodes.Status200OK);
 
         group.MapPost("/", CreateEvent)
             .Produces<EventDTO>(StatusCodes.Status201Created)
@@ -156,11 +156,13 @@ public class EventEndpoints : IEndpointCollection
         return Results.Ok(new PaginatedEventQuery(events.Map(), nextCursor));
     }
 
-    public static async Task<IResult> CreateEvent(CreateEventBody body, IEventService eventService)
+    public static async Task<IResult> CreateEvent(CreateEventBody body, IEventService eventService, IOutputCacheStore cache, CancellationToken token)
     {
         var (name, groupId, mediaId) = body;
 
         var atlasEvent = await eventService.CreateEventAsync(name, groupId, mediaId);
+
+        await cache.EvictByTagAsync("events", token);
 
         return Results.Created($"/events/{atlasEvent.Id}", atlasEvent.Map());
     }

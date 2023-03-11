@@ -3,6 +3,7 @@ using System.Security.Claims;
 using VRAtlas.Attributes;
 using VRAtlas.Endpoints.Internal;
 using VRAtlas.Endpoints.Validators;
+using VRAtlas.Filters;
 using VRAtlas.Models;
 using VRAtlas.Models.DTO;
 using VRAtlas.Services;
@@ -93,11 +94,17 @@ public class GroupEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
+        var count = await groupService.GetGroupCountByRoleAsync(user.Id, GroupMemberRole.Owner);
+        if (count >= 3)
+        {
+            return Results.BadRequest(new FilterValidationResponse(new string[] { "Cannot own more than 3 groups." }));
+        }
+
         var (name, description, icon, banner) = body;
 
         var group = await groupService.CreateGroupAsync(name, description, icon, banner, user.Id);
 
-        return Results.Created($"/groups/{group.Id}", group);
+        return Results.Created($"/groups/{group.Id}", group.Map());
     }
 
     private static async Task<IResult> UpdateGroup(UpdateGroupBody body, IGroupService groupService, IUserService userService)

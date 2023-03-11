@@ -8,6 +8,14 @@ namespace VRAtlas.Services;
 public interface IGroupService
 {
     /// <summary>
+    /// Gets the count of the number of groups a user is in for a specific role they have
+    /// </summary>
+    /// <param name="userId">The user id</param>
+    /// <param name="role">The role of the user.</param>
+    /// <returns>The count of the group.</returns>
+    Task<int> GetGroupCountByRoleAsync(Guid userId, GroupMemberRole role);
+
+    /// <summary>
     /// Gets a group by it's id.
     /// </summary>
     /// <param name="id">The id of the group.</param>
@@ -291,5 +299,10 @@ public class GroupService : IGroupService
 
         // We don't return the group object above since we never loaded the group members in the query.
         return (await GetGroupByIdAsync(group.Id))!;
+    }
+
+    public Task<int> GetGroupCountByRoleAsync(Guid userId, GroupMemberRole role)
+    {
+        return _atlasContext.GroupMembers.CountAsync(m => m.User!.Id == userId && m.Role == role);
     }
 }

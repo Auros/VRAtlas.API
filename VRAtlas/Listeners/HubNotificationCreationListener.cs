@@ -4,11 +4,11 @@ using VRAtlas.Events;
 
 namespace VRAtlas.Listeners;
 
-public class NotificationCreationListener : IScopedEventListener<NotificationCreatedEvent>
+public class HubNotificationCreationListener : IScopedEventListener<NotificationCreatedEvent>
 {
     private readonly IHubContext<AtlasHub> _atlasHubContext;
 
-    public NotificationCreationListener(IHubContext<AtlasHub> atlasHubContext)
+    public HubNotificationCreationListener(IHubContext<AtlasHub> atlasHubContext)
     {
         _atlasHubContext = atlasHubContext;
     }

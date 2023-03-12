@@ -45,6 +45,5 @@ public class RedisOutputCacheStore : IOutputCacheStore
             await db.SetAddAsync(tag, key);
 
         await db.StringSetAsync(key, value, validFor);
-            
     }
 }

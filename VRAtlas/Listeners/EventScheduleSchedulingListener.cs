@@ -27,15 +27,21 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
     public async Task Handle(EventScheduledEvent message)
     {
         var id = message.Id;
+        _logger.LogInformation("Received event schedule event for event {EventId}", id);
 
         // Get the event from the subject
         var atlasEvent = await _eventService.GetEventByIdAsync(message.Id) ?? throw new Exception($"Unable to find event with id {message.Id}. This should not happen.");
 
         if (!atlasEvent.StartTime.HasValue || !atlasEvent.EndTime.HasValue)
+        {
+            _logger.LogWarning("Event {EventId} does not have start or end times", id);
             return;
+        }
 
+        _logger.LogDebug("Fetching scheduler");
         var scheduler = await _schedulerFactory.GetScheduler();
 
+        _logger.LogDebug("Setting up job map");
         JobDataMap eventDataMap = new();
         eventDataMap.Put("Event.Id", atlasEvent.Id);
 
@@ -45,6 +51,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
         TriggerKey reminderOneHourKey = new($"event-reminder.{id}.OneHour", nameof(VRAtlas));
         TriggerKey reminderThirtyMinutesKey = new($"event-reminder.{id}.ThirtyMinutes", nameof(VRAtlas));
 
+        _logger.LogInformation("Unscheduling possible old jobs for event {EventId}", id);
         // Unschedule all existing jobs that may have existed before.
         await scheduler.UnscheduleJobs(new[]
         {
@@ -55,6 +62,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
             reminderThirtyMinutesKey
         });
 
+        _logger.LogDebug("Creating new triggers for event {EventId}", id);
         // Create the event triggers
         List<ITrigger> triggers = new()
         {
@@ -76,6 +84,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
         var now = _clock.GetCurrentInstant();
         if (atlasEvent.StartTime.Value > now.Plus(Duration.FromMinutes(30)))
         {
+            _logger.LogDebug("Including time frame for thirty minutes schedule reminders for event {EventId}", id);
             triggers.Add(TriggerBuilder.Create()
                 .WithIdentity(reminderThirtyMinutesKey)
                 .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromMinutes(30)).ToDateTimeUtc())
@@ -85,6 +94,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
         }
         if (atlasEvent.StartTime.Value > now.Plus(Duration.FromHours(1)))
         {
+            _logger.LogDebug("Including time frame for one hour schedule reminders for event {EventId}", id);
             triggers.Add(TriggerBuilder.Create()
                 .WithIdentity(reminderOneHourKey)
                 .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromHours(1)).ToDateTimeUtc())
@@ -94,6 +104,7 @@ public class EventScheduleSchedulingListener : IScopedEventListener<EventSchedul
         }
         if (atlasEvent.StartTime.Value > now.Plus(Duration.FromDays(1)))
         {
+            _logger.LogDebug("Including time frame for one day schedule reminders for event {EventId}", id);
             triggers.Add(TriggerBuilder.Create()
                 .WithIdentity(reminderOneDayKey)
                 .StartAt(atlasEvent.StartTime.Value.Minus(Duration.FromDays(1)).ToDateTimeUtc())

@@ -25,14 +25,19 @@ public class EventStartingJob : IJob
         try
         {
             var eventId = Guid.Parse(context.MergedJobDataMap.GetString("Event.Id")!);
+            _atlasLogger.LogInformation("Automatic event starting job started for {EventId}", eventId);
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
             
             // Do not continue if we can't find the event or auto starting is disabled.
             if (atlasEvent is null || !atlasEvent.AutoStart)
+            {
+                _atlasLogger.LogInformation("Could not find event {EventId}, or auto start is disabled", eventId, atlasEvent?.Status);
                 return;
+            }    
 
             await _eventService.StartEventAsync(atlasEvent.Id);
             await _outputCacheStore.EvictByTagAsync("events", default);
+            _atlasLogger.LogInformation("Automatic event starting for event {EventId} completed", eventId);
         }
         catch (Exception e) 
         {

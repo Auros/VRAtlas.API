@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 
 namespace VRAtlas.Services;
@@ -32,11 +33,13 @@ public interface ITagService
 public class TagService : ITagService
 {
     private readonly IClock _clock;
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
 
-    public TagService(IClock clock, AtlasContext atlasContext)
+    public TagService(IClock clock, IAtlasLogger<TagService> atlasLogger, AtlasContext atlasContext)
     {
         _clock = clock;
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
     }
 
@@ -46,6 +49,7 @@ public class TagService : ITagService
         if (tag is not null)
             return tag;
 
+        _atlasLogger.LogInformation("User {UserId} has initiated the creation of the tag {TagName}", creatorUserId, name);
         var user = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == creatorUserId);
         var now = _clock.GetCurrentInstant();
         
@@ -59,6 +63,7 @@ public class TagService : ITagService
 
         _atlasContext.Tags.Add(tag);
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Successfully created the tag {TagName}", name);
         return tag;
     }
 

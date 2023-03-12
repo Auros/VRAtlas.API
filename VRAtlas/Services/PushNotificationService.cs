@@ -1,6 +1,7 @@
 ﻿using Lib.Net.Http.WebPush;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 
 namespace VRAtlas.Services;
@@ -35,11 +36,13 @@ public interface IPushNotificationService
 public class PushNotificationService : IPushNotificationService
 {
     private readonly IClock _clock;
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
 
-    public PushNotificationService(IClock clock, AtlasContext atlasContext)
+    public PushNotificationService(IClock clock, IAtlasLogger<PushNotificationService> atlasLogger, AtlasContext atlasContext)
     {
         _clock = clock;
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
     }
 
@@ -71,6 +74,9 @@ public class PushNotificationService : IPushNotificationService
         sub.SetKey(PushEncryptionKeyName.Auth, endpoint);
         sub.SetKey(PushEncryptionKeyName.P256DH, endpoint);
         sub.Endpoint = endpoint;
+
+        _atlasLogger.LogInformation("User {UserId} successfully created a push notification hook");
+
         return sub;
     }
 
@@ -82,6 +88,7 @@ public class PushNotificationService : IPushNotificationService
 
         _atlasContext.WebPushSubscriptions.Remove(sub);
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Push notification hook removed");
         return true;
     }
 }

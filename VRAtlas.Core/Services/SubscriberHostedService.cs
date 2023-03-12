@@ -49,12 +49,14 @@ internal class SubscriberHostedService<T> : IHostedService, IMessageHandler<T>
     {
         try
         {
+            _logger.LogDebug("Processing event type {EventType}", typeof(T).FullName);
             using var scope = _serviceProvider.CreateScope();
             foreach (var info in _scopedSubscriberInfos)
             {
                 var instance = ActivatorUtilities.CreateInstance(scope.ServiceProvider, info.Type);
                 await (instance as IScopedEventListener<T>)!.Handle(message);
             }
+            _logger.LogDebug("Finished event processing for type {EventType}", typeof(T).FullName);
         }
         catch (Exception e)
         {

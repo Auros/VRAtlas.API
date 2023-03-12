@@ -1,5 +1,7 @@
 ﻿using FluentAssertions;
+using NSubstitute;
 using System.Security.Claims;
+using VRAtlas.Logging;
 using VRAtlas.Services;
 using Xunit;
 
@@ -9,10 +11,11 @@ public sealed class UserServiceTests : IClassFixture<AtlasFixture>
 {
     private readonly UserService _sut;
     private readonly AtlasContext _atlasContext;
+    private readonly IAtlasLogger<UserService> _atlasLogger = Substitute.For<IAtlasLogger<UserService>>();
 
     public UserServiceTests(AtlasFixture atlasFixture)
     {
-        _sut = new UserService(atlasFixture.Context);
+        _sut = new UserService(_atlasLogger, atlasFixture.Context);
         _atlasContext = atlasFixture.Context;
     }
 

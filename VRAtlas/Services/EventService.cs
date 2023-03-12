@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using VRAtlas.Events;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 using static VRAtlas.Services.IEventService;
 
@@ -127,6 +128,7 @@ public interface IEventService
 public class EventService : IEventService
 {
     private readonly ITagService _tagService;
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
     private readonly IPublisher<EventCreatedEvent> _eventCreated;
     private readonly IPublisher<EventScheduledEvent> _eventScheduled;
@@ -136,6 +138,7 @@ public class EventService : IEventService
 
     public EventService(
         ITagService tagService,
+        IAtlasLogger<EventService> atlasLogger,
         AtlasContext atlasContext,
         IPublisher<EventCreatedEvent> eventCreated,
         IPublisher<EventScheduledEvent> eventScheduled,
@@ -144,6 +147,7 @@ public class EventService : IEventService
         IPublisher<EventStarAcceptedInviteEvent> eventStarAccepted)
     {
         _tagService = tagService;
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
         _eventCreated = eventCreated;
         _eventScheduled = eventScheduled;
@@ -214,6 +218,7 @@ public class EventService : IEventService
 
     public async Task<Event> CreateEventAsync(string name, Guid ownerId, Guid mediaId)
     {
+        _atlasLogger.LogDebug("Creating a new event named {EventName} by {OwnerId}", name, ownerId);
         var group = await _atlasContext.Groups.Include(g => g.Members).ThenInclude(m => m.User).FirstOrDefaultAsync(g => g.Id == ownerId) ?? throw new InvalidOperationException($"Group {ownerId} does not exist.");
 
         Event atlasEvent = new()
@@ -229,6 +234,7 @@ public class EventService : IEventService
 
         _atlasContext.Events.Add(atlasEvent);
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Successfully created a new event with id {EventId} and name {EventName}", atlasEvent.Id, atlasEvent.Name);
         _eventCreated.Publish(new EventCreatedEvent(group.Id));
         return atlasEvent;
     }
@@ -240,6 +246,8 @@ public class EventService : IEventService
 
     public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart)
     {
+        _atlasLogger.LogDebug("Updating the event {EventId}", id);
+
         // Pre-create any tags up here.
         // TODO: Reuse the captured ids.
         foreach (var tag in tags)
@@ -333,6 +341,7 @@ public class EventService : IEventService
 
         // Return a fresh event for consumers (since we updated the object indirectly)
         atlasEvent = await GetEventByIdAsync(id);
+        _atlasLogger.LogInformation("Successfully updated the event {EventId}", id);
 
         return atlasEvent;
     }
@@ -340,8 +349,17 @@ public class EventService : IEventService
     public async Task AnnounceEventAsync(Guid id)
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (atlasEvent is null || atlasEvent.Status is not EventStatus.Unlisted)
+        if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event when trying to announce {EventId}", id);
             return;
+        }
+
+        if (atlasEvent.Status is not EventStatus.Unlisted)
+        {
+            _atlasLogger.LogInformation("Tried to announce an event that was not previously unlisted with id {EventId}", id);
+            return;
+        }
 
         atlasEvent.Status = EventStatus.Announced;
         await _atlasContext.SaveChangesAsync();
@@ -352,12 +370,22 @@ public class EventService : IEventService
     public async Task StartEventAsync(Guid id)
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
-        if (atlasEvent is null || atlasEvent.Status is not EventStatus.Announced)
+        if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event when trying to start {EventId}", id);
             return;
+        }
+        
+        if (atlasEvent.Status is not EventStatus.Announced)
+        {
+            _atlasLogger.LogInformation("Tried to start an event that was not previously announced with id {EventId}", id);
+            return;
+        }
 
         atlasEvent.Status = EventStatus.Started;
         await _atlasContext.SaveChangesAsync();
 
+        _atlasLogger.LogInformation("Successfully started the event {EventId}", id);
         _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
@@ -365,14 +393,21 @@ public class EventService : IEventService
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
         if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event when trying to conclude {EventId}", id);
             return;
+        }
 
         if (atlasEvent.Status is not EventStatus.Started or EventStatus.Announced)
+        {
+            _atlasLogger.LogWarning("Tried to conclude an event that was not previously started or announced with id {EventId}", id);
             return;
+        }    
 
         atlasEvent.Status = EventStatus.Concluded;
         await _atlasContext.SaveChangesAsync();
 
+        _atlasLogger.LogInformation("Successfully concluded the event {EventId}", id);
         _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
@@ -380,14 +415,21 @@ public class EventService : IEventService
     {
         var atlasEvent = await _atlasContext.Events.FirstOrDefaultAsync(e => e.Id == id);
         if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event when trying to cancel {EventId}", id);
             return;
+        }
 
         if (atlasEvent.Status is not EventStatus.Started or EventStatus.Announced)
+        {
+            _atlasLogger.LogWarning("Tried to cancel an event that was not previously started or announced with id {EventId}", id);
             return;
+        }
 
         atlasEvent.Status = EventStatus.Canceled;
         await _atlasContext.SaveChangesAsync();
 
+        _atlasLogger.LogInformation("Successfully canceled the event {EventId}", id);
         _eventStatusUpdated.Publish(new EventStatusUpdatedEvent(atlasEvent.Id, atlasEvent.Status));
     }
 
@@ -405,10 +447,16 @@ public class EventService : IEventService
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event when trying to schedule {EventId}", id);
             return null;
+        }    
 
         if (atlasEvent.Status is not EventStatus.Unlisted && atlasEvent.Status is not EventStatus.Announced)
+        {
+            _atlasLogger.LogWarning("Tried to schedule an event that's not unlisted or announced with id {EventId}", id);
             return atlasEvent;
+        }    
 
         var oldTime = atlasEvent.StartTime;
         var oldEndTime = atlasEvent.EndTime;
@@ -417,9 +465,11 @@ public class EventService : IEventService
         atlasEvent.StartTime = startTime;
 
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Successfully scheduled event {EventId}", id);
 
         if ((oldTime.HasValue || oldEndTime.HasValue) && (startTime != oldTime || endTime != oldEndTime))
         {
+            _atlasLogger.LogInformation("Publishing new schedule event for event {EventId}", id);
             _eventScheduled.Publish(new EventScheduledEvent(id));
         }
 
@@ -438,17 +488,25 @@ public class EventService : IEventService
 
     public async Task<bool> AcceptStarInvitationAsync(Guid id, Guid userId)
     {
+        _atlasLogger.LogInformation("User {StarUserId} is trying to accept the invite for event {EventId}", userId, id);
         var atlasEvent = await _atlasContext.Events.Include(e => e.Stars).ThenInclude(s => s.User).FirstOrDefaultAsync(e => e.Id == id);
         if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event {EventId} when trying to accept the invite for {StarUserId}", id, userId);
             return false;
+        }    
 
         var star = atlasEvent.Stars.FirstOrDefault(s => s.User!.Id == userId);
         if (star is null || star.Status is not EventStarStatus.Pending)
+        {
+            _atlasLogger.LogWarning("Could not find pending invite for {StarUserId} in event {EventId}", userId, id);
             return false;
+        }    
 
         star.Status = EventStarStatus.Confirmed;
         await _atlasContext.SaveChangesAsync();
 
+        _atlasLogger.LogInformation("User {StarUserId} successfully accepted invite for the event {EventId}", userId, id);
         _eventStarAccepted.Publish(new EventStarAcceptedInviteEvent(atlasEvent!.Id, star.User!.Id));
 
         return true;
@@ -456,17 +514,25 @@ public class EventService : IEventService
 
     public async Task<bool> RejectStarInvitationAsync(Guid id, Guid userId)
     {
+        _atlasLogger.LogInformation("User {StarUserId} is trying to reject the invite for event {EventId}", userId, id);
         var atlasEvent = await _atlasContext.Events.Include(e => e.Stars).ThenInclude(s => s.User).FirstOrDefaultAsync(e => e.Id == id);
         if (atlasEvent is null)
+        {
+            _atlasLogger.LogWarning("Could not find event {EventId} when trying to reject the invite for {StarUserId}", id, userId);
             return false;
+        }    
 
         var star = atlasEvent.Stars.FirstOrDefault(s => s.User!.Id == userId);
         if (star is null || star.Status is not EventStarStatus.Pending)
+        {
+            _atlasLogger.LogWarning("Could not find pending invite for {StarUserId} in event {EventId}", userId, id);
             return false;
+        }    
 
         star.Status = EventStarStatus.Rejected;
         await _atlasContext.SaveChangesAsync();
 
+        _atlasLogger.LogInformation("User {StarUserId} successfully rejected invite for the event {EventId}", userId, id);
         return true;
     }
 

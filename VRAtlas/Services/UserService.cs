@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 
 namespace VRAtlas.Services;
@@ -14,10 +15,12 @@ public interface IUserService
 
 public class UserService : IUserService
 {
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
 
-    public UserService(AtlasContext atlasContext)
+    public UserService(IAtlasLogger<UserService> atlasLogger, AtlasContext atlasContext)
     {
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
     }
 
@@ -70,6 +73,7 @@ public class UserService : IUserService
         user.DefaultNotificationSettings!.AtOneDay = notificationMetadata.AtOneDay;
 
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} updated their profile", user.Id);
 
         return user;
     }

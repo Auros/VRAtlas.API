@@ -14,7 +14,6 @@ using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Quartz;
 using Serilog;
-using Serilog.Events;
 using StackExchange.Redis;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -37,13 +36,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Setup our logger with Serilog
 var logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override(nameof(Microsoft), LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Information)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Async(options => options.Console())
+    .ReadFrom.Configuration(builder.Configuration)
     .CreateLogger();
+
 Log.Logger = logger;
 
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>() ?? new Auth0Options { Audience = string.Empty, ClientId = string.Empty, ClientSecret = string.Empty, Domain = string.Empty };

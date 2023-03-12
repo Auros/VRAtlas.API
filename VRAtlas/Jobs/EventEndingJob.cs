@@ -25,6 +25,7 @@ public class EventEndingJob : IJob
         try
         {
             var eventId = Guid.Parse(context.MergedJobDataMap.GetString("Event.Id")!);
+            _atlasLogger.LogInformation("Automatic event ending job started for {EventId}", eventId);
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
 
             // Do not continue if we can't find the event.
@@ -34,6 +35,7 @@ public class EventEndingJob : IJob
             // Conclude the event.
             await _eventService.ConcludeEventAsync(atlasEvent.Id);
             await _outputCacheStore.EvictByTagAsync("events", default);
+            _atlasLogger.LogInformation("Automatic event ending for event {EventId} completed", eventId);
         }
         catch (Exception e)
         {

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using VRAtlas.Events;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 
 namespace VRAtlas.Services;
@@ -50,12 +51,14 @@ public interface INotificationService
 public class NotificationService : INotificationService
 {
     private readonly IClock _clock;
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
     private readonly IPublisher<NotificationCreatedEvent> _notificationCreated;
 
-    public NotificationService(IClock clock, AtlasContext atlasContext, IPublisher<NotificationCreatedEvent> notificationCreated)
+    public NotificationService(IClock clock, IAtlasLogger<NotificationService> atlasLogger, AtlasContext atlasContext, IPublisher<NotificationCreatedEvent> notificationCreated)
     {
         _clock = clock;
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
         _notificationCreated = notificationCreated;
     }
@@ -99,6 +102,7 @@ public class NotificationService : INotificationService
         }
 
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("Created notification for {EntityId} ({EntityType}) with key {NotificationKey}", entityId, entityType, key);
 
         foreach (var (notif, user) in addedNotifications)
             _notificationCreated.Publish(new NotificationCreatedEvent(notif, user));

@@ -30,12 +30,16 @@ public class EventReminderJob : IJob
         {
             var eventId = Guid.Parse(context.MergedJobDataMap.GetString("Event.Id")!);
             var mode = (EventReminderMode)context.MergedJobDataMap.GetInt("Event.Reminder.Mode");
+            _atlasLogger.LogInformation("Automatic event reminder job started for {EventId} for mode {EventReminderMode}", eventId, mode);
 
             var atlasEvent = await _eventService.GetEventByIdAsync(eventId);
 
             // Do not continue if we can't find the event.
             if (atlasEvent is null || atlasEvent.Status is not EventStatus.Announced)
+            {
+                _atlasLogger.LogInformation("Could not find event {EventId}, or it's not announced ({EventStatus})", eventId, atlasEvent?.Status);
                 return;
+            }    
 
             // Fetch the user ids of those who follow this event based on the specific event settings.
             IQueryable<Follow> query = _atlasContext.Follows;
@@ -61,6 +65,7 @@ public class EventReminderJob : IJob
             var description = $"The event {atlasEvent.Name} hosted by {atlasEvent.Owner!.Name} begins in {startsIn} (subject to change). Hope to see you there!";
 
             await _notificationService.CreateNotificationAsync(atlasEvent.Id, EntityType.Event, NotificationKeys.EventReminder, title, description, subscribedUserIds);
+            _atlasLogger.LogInformation("Automatic event reminder for event {EventId} completed", eventId);
         }
         catch (Exception e)
         {

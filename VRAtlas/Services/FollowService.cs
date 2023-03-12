@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using VRAtlas.Logging;
 using VRAtlas.Models;
 
 namespace VRAtlas.Services;
@@ -36,11 +37,13 @@ public interface IFollowService
 public class FollowService : IFollowService
 {
     private readonly IClock _clock;
+    private readonly IAtlasLogger _atlasLogger;
     private readonly AtlasContext _atlasContext;
 
-    public FollowService(IClock clock, AtlasContext atlasContext)
+    public FollowService(IClock clock, IAtlasLogger<FollowService> atlasLogger, AtlasContext atlasContext)
     {
         _clock = clock;
+        _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
     }
 
@@ -72,6 +75,7 @@ public class FollowService : IFollowService
         follow.FollowedAt = _clock.GetCurrentInstant();
 
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} successfully followed the entity {EntityId} ({EntityType})", userId, entityId, entityType);
 
         return follow;
     }
@@ -84,6 +88,7 @@ public class FollowService : IFollowService
 
         _atlasContext.Follows.Remove(follow);
         await _atlasContext.SaveChangesAsync();
+        _atlasLogger.LogInformation("User {UserId} successfully unfollowed the entity {EntityId}", userId, entityId);
         return true;
     }
 }

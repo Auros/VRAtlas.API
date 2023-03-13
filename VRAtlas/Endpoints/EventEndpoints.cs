@@ -246,7 +246,11 @@ public class EventEndpoints : IEndpointCollection
     // A special endpoint for the front page of the website. Heavily cached with event data.
     public static async Task<IResult> Summaries(AtlasContext atlasContext)
     {
-        IQueryable<Event> Query(EventStatus status) => atlasContext.Events.Include(e => e.Tags).Where(e => e.Status == status).Take(6);
+        IQueryable<Event> Query(EventStatus status) => atlasContext.Events
+            .Include(e => e.Tags)
+            .ThenInclude(t => t.Tag)
+            .Where(e => e.Status == status)
+            .Take(6);
 
         var live = await Query(EventStatus.Started).OrderBy(e => e.StartTime).ToArrayAsync();
         var upcoming = await Query(EventStatus.Announced).OrderBy(e => e.StartTime).ToArrayAsync();

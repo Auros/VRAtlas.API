@@ -1,5 +1,5 @@
 # VRAtlas.API
-API for the VRAtlas - The open source hub to find new events occurring in virtual reality.
+API for the VRAtlas - The open source hub to find new events in virtual reality.
 
 ## Live
 
@@ -23,13 +23,15 @@ You will also need these dependencies
 * .NET 7 SDK
 * PostgreSQL (14 or Later, Multiple Databases Required)
 * Docker (For Running Tests)
+* Redis (For Caching)
 
 The configuration file `appsettings.json, secrets.json, etc.` is as follows:
 ```jsonc
 {
   "ConnectionStrings": {
     "Main": "Server=dbhost;Port=dbport;User Id=userid;Password=password;Database=vratlas;",
-    "Quartz": "Server=quartzdbhost;Port=quartzdbport;User Id=quartzuserid;Password=quartzpassword;Database=postgres;" // Relies on Quartz.NET for scheduling events.
+    "Quartz": "Server=quartzdbhost;Port=quartzdbport;User Id=quartzuserid;Password=quartzpassword;Database=postgres;", // Relies on Quartz.NET for scheduling events.
+    "Redis": "localhost:6379"
   },
   "Auth0": {
     "Domain": "https://your-tenant.region.auth0.com/", // Make sure that it begins with the protocol ("https://") and ends with the forward slash ("/")
@@ -40,6 +42,9 @@ The configuration file `appsettings.json, secrets.json, etc.` is as follows:
   "Cloudflare": {
     "ApiUrl": "https://api.cloudflare.com/client/v4/accounts/<YOUR ACCOUNT ID>", // VRAtlas.API uses v4 of the Cloudflare API
     "ApiKey": "<YOUR API KEY>"
+  },
+  "VRAtlas": {
+    "Salt": "<secret string>" // Used for generating salts for ID generation 
   }
 }
 ```

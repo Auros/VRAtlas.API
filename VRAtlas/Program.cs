@@ -161,8 +161,8 @@ builder.Services.AddAuthorization(options =>
         "update:groups",
         "create:events",
         "update:events",
-        "admin:clear"
-
+        "admin:clear",
+        "admin:reschedule"
     });
 });
 builder.Services.AddHttpClient("Auth0", (container, client) =>

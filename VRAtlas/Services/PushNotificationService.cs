@@ -69,13 +69,15 @@ public class PushNotificationService : IPushNotificationService
             CreatedAt = _clock.GetCurrentInstant(),
             Endpoint = endpoint
         });
+
         await _atlasContext.SaveChangesAsync();
+
         PushSubscription sub = new();
         sub.SetKey(PushEncryptionKeyName.Auth, endpoint);
         sub.SetKey(PushEncryptionKeyName.P256DH, endpoint);
         sub.Endpoint = endpoint;
 
-        _atlasLogger.LogInformation("User {UserId} successfully created a push notification hook");
+        _atlasLogger.LogInformation("User {UserId} successfully created a push notification hook", userId);
 
         return sub;
     }

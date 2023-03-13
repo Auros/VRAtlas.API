@@ -467,7 +467,7 @@ public class EventService : IEventService
         await _atlasContext.SaveChangesAsync();
         _atlasLogger.LogInformation("Successfully scheduled event {EventId}", id);
 
-        if ((oldTime.HasValue || oldEndTime.HasValue) && (startTime != oldTime || endTime != oldEndTime))
+        if ((!oldTime.HasValue && !oldEndTime.HasValue) || ((oldTime.HasValue || oldEndTime.HasValue) && (startTime != oldTime || endTime != oldEndTime)))
         {
             _atlasLogger.LogInformation("Publishing new schedule event for event {EventId}", id);
             _eventScheduled.Publish(new EventScheduledEvent(id));

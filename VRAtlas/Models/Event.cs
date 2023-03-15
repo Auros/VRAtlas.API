@@ -28,6 +28,8 @@ public class Event
 
     public Guid Media { get; set; }
 
+    public Guid? Video { get; set; }
+
     public bool AutoStart { get; set; }
 
     public RSVP? RSVP { get; set; }

@@ -9,14 +9,16 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
     private readonly IUserService _userService;
     private readonly IEventService _eventService;
     private readonly IGroupService _groupService;
+    private readonly IVideoService _videoService;
     private readonly IImageCdnService _imageCdnService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UpdateEventBodyValidator(IUserService userService, IEventService eventService, IGroupService groupService, IImageCdnService imageCdnService, IHttpContextAccessor httpContextAccessor)
+    public UpdateEventBodyValidator(IUserService userService, IEventService eventService, IGroupService groupService, IVideoService videoService, IImageCdnService imageCdnService, IHttpContextAccessor httpContextAccessor)
     {
         _userService = userService;
         _eventService = eventService;
         _groupService = groupService;
+        _videoService = videoService;
         _imageCdnService = imageCdnService;
         _httpContextAccessor = httpContextAccessor;
 
@@ -44,8 +46,20 @@ public class UpdateEventBodyValidator : AbstractValidator<EventEndpoints.UpdateE
 
         RuleFor(x => x.Stars)
             .NotNull().WithMessage("Stars property must be provided.")
-            .Must(x => x.Length <= 25).WithMessage("Cannot have more than 25 event stars")
+            .Must(x => x.Length <= 25).WithMessage("Cannot have more than 25 event stars.")
             .Must(x => x.All(s => string.IsNullOrWhiteSpace(s.Title) || s.Title.Length <= 64)).WithMessage("All event star titles must individually be under 64 characters.");
+
+        RuleFor(x => x.Video)
+            .MustAsync(EnsureUserCanUseVideo).WithMessage("Invalid video id.");
+    }
+
+    private Task<bool> EnsureUserCanUseVideo(Guid? id, CancellationToken _)
+    {
+        // If there's no value, it means we don't need to process the video resource id.
+        if (!id.HasValue)
+            return Task.FromResult(true);
+
+        return ValidationMethods.EnsureValidVideoAsync(id.Value, _httpContextAccessor, _userService, _videoService);
     }
 
     private Task<bool> EnsureEventExistsAsync(Guid id, CancellationToken _)

@@ -1,5 +1,6 @@
 ﻿using FFMpegCore;
 using FFMpegCore.Pipes;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NodaTime;
 using VRAtlas.Logging;
@@ -10,6 +11,7 @@ namespace VRAtlas.Services;
 
 public interface IVideoService
 {
+    Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId);
     Task<Guid> SaveAsync(Stream stream, Guid userId);
 }
 
@@ -27,6 +29,8 @@ public class VideoService : IVideoService
         _atlasLogger = atlasLogger;
         _atlasContext = atlasContext;
     }
+
+    public Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId) => _atlasContext.UploadRecords.AnyAsync(r => r.UserId == userId && r.Resource == id);
 
     public async Task<Guid> SaveAsync(Stream stream, Guid userId)
     {

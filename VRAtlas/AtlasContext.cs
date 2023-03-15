@@ -23,6 +23,8 @@ public class AtlasContext : DbContext
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<UploadRecord> UploadRecords => Set<UploadRecord>();
+
     public DbSet<WebPushSubscription> WebPushSubscriptions => Set<WebPushSubscription>();
 
     public AtlasContext(DbContextOptions options) : base(options)

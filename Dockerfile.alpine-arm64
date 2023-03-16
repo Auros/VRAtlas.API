@@ -24,7 +24,9 @@ RUN dotnet publish -c Release -o out -r linux-musl-arm64 --self-contained false 
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine-arm64v8
 
 # install ffmpeg
-RUN apk update && apk upgrade && apk add -u ffmpeg libgdiplus
+RUN apk update
+RUN apk add
+RUN apk add ffmpeg
 
 WORKDIR /app
 COPY --from=build /app/VRAtlas/out ./

@@ -64,6 +64,6 @@ jobs:
         echo "TARGET_IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
     - name: Build Image
       working-directory: ./VRAtlas
-      run: docker build -t ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:alpine-arm64 -f ../Dockerfile.alpine-arm64 ../
+      run: docker build -t ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:arm64 -f ../Dockerfile.arm64 ../
     - name: Publish Image
       run: docker push ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }} --all-tags

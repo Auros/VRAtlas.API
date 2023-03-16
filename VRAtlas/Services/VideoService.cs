@@ -12,7 +12,7 @@ namespace VRAtlas.Services;
 public interface IVideoService
 {
     Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId);
-    Task<Guid> SaveAsync(Stream stream, Guid userId);
+    Task<Guid> SaveAsync(string filePath, Guid userId, long length);
 }
 
 public class VideoService : IVideoService
@@ -32,7 +32,7 @@ public class VideoService : IVideoService
 
     public Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId) => _atlasContext.UploadRecords.AnyAsync(r => r.UserId == userId && r.Resource == id);
 
-    public async Task<Guid> SaveAsync(Stream stream, Guid userId)
+    public async Task<Guid> SaveAsync(string filePath, Guid userId, long length)
     {
         Guid id = Guid.NewGuid();
         var options = _options.Value;
@@ -40,32 +40,30 @@ public class VideoService : IVideoService
 
         _atlasLogger.LogInformation("{UserId} is generating videos with id {VideoResourceId}", userId, id);
 
-        _atlasLogger.LogDebug("Copying input stream to memory for {VideoResourceId}", id);
-
-        using MemoryStream ms = new();
-        await stream.CopyToAsync(ms);
-        var length = ms.Length;
-
-        StreamPipeSource source = new(ms);
-
-        // -an removes audio tracks
-
+        FileInfo fileInfo = new(filePath);
+        
         string targetMp4Name = $"{id}.mp4";
         _atlasLogger.LogDebug("Generating audioless .mp4 version of {VideoResourceId}");
         
-        await FFMpegArguments.FromPipeInput(source)
+        // -an removes audio tracks
+        await FFMpegArguments.FromFileInput(fileInfo)
             .OutputToFile(Path.Combine(options.CdnPath, targetMp4Name), true, options => options.WithCustomArgument("-an"))
             .ProcessAsynchronously();
 
-        // Reset the memory stream so we can read from it again
-        ms.Position = 0;
-
         string targetWebmName = $"{id}.webm";
-        _atlasLogger.LogDebug("Generating audioless .webm version of {VideoResourceId}");
+        string targetTemporaryWebmName = $"{id}.temp.webm";
+        _atlasLogger.LogDebug("Generating audioless .webm version of {VideoResourceId} on separate thread");
+        // We generate the webm on a separate thread because the codec conversion can take some time
+        _ = Task.Run(async () =>
+        {
+            // We use a temporary file name so the cdn returns null until we finish processing the file
+            await FFMpegArguments.FromFileInput(fileInfo)
+                .OutputToFile(Path.Combine(options.CdnPath, targetTemporaryWebmName), true, options => options.WithCustomArgument("-an"))
+                .ProcessAsynchronously();
 
-        await FFMpegArguments.FromPipeInput(source)
-            .OutputToFile(Path.Combine(options.CdnPath, targetWebmName), true, options => options.WithCustomArgument("-an"))
-            .ProcessAsynchronously();
+            // Rename the video file now that its complete.
+            File.Move(Path.Combine(options.CdnPath, targetTemporaryWebmName), Path.Combine(options.CdnPath, targetWebmName));
+        });
 
         _atlasLogger.LogDebug("Creating record in database");
 

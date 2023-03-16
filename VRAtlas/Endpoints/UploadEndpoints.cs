@@ -50,12 +50,24 @@ public class UploadEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
+        var path = options.Value.CdnPath;
         var maxLength = options.Value.MaximumFileSizeLength;
-        if (file.Length > maxLength)
-            return Results.BadRequest(new FilterValidationResponse(new string[] { "File size is too large!" }));
+        if (file.Length == 0)
+            return Results.BadRequest(new FilterValidationResponse(new string[] { "Video file contains no data." }));
 
-        using var stream = file.OpenReadStream();
-        var resourceId = await videoService.SaveAsync(stream, user.Id);
+        if (file.Length > maxLength)
+            return Results.BadRequest(new FilterValidationResponse(new string[] { "Video file size is too large." }));
+
+        var ext = Path.GetExtension(file.FileName);
+        if (!ext.Equals(".mp4", StringComparison.InvariantCultureIgnoreCase) && !ext.Equals(".webm", StringComparison.InvariantCultureIgnoreCase))
+            return Results.BadRequest(new FilterValidationResponse(new string[] { "Invalid file type." }));
+
+        var filePath = Path.Combine(path, $"{Guid.NewGuid()}.tmp{ext}");
+        using var stream = File.Create(filePath);
+        await file.CopyToAsync(stream);
+        await stream.DisposeAsync();
+
+        var resourceId = await videoService.SaveAsync(filePath, user.Id, file.Length);
 
         return Results.Ok(new UploadVideoBody(resourceId));
     }

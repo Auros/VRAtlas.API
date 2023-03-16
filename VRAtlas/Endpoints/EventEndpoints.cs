@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using System.Security.Claims;
 using VRAtlas.Attributes;
@@ -22,7 +21,7 @@ public class EventEndpoints : IEndpointCollection
     public record CreateEventBody(string Name, Guid Group, Guid Media);
 
     [VisualName("Update Event (Body)")]
-    public record UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart);
+    public record UpdateEventBody(Guid Id, string Name, string Description, Guid? Media, string[] Tags, EventStarInfo[] Stars, bool AutoStart, bool HasVideo, Guid? Video);
 
     [VisualName("Schedule Event (Body)")]
     public record ScheduleEventBody(Guid Id, Instant StartTime, Instant EndTime);
@@ -173,9 +172,9 @@ public class EventEndpoints : IEndpointCollection
         if (user is null)
             return Results.Unauthorized();
 
-        var (id, name, description, media, tags, stars, autoStart) = body;
+        var (id, name, description, media, tags, stars, autoStart, hasVideo, videoId) = body;
 
-        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart);
+        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart, hasVideo, videoId);
 
         await cache.EvictByTagAsync("events", token);
 

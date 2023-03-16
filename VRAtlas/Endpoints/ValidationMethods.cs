@@ -5,6 +5,22 @@ namespace VRAtlas.Endpoints;
 
 public static class ValidationMethods
 {
+    public static async Task<bool> EnsureValidVideoAsync(Guid resourceId, IHttpContextAccessor httpContextAccessor, IUserService userService, IVideoService videoService)
+    {
+        // Get the currently authenticated user.
+        var principal = httpContextAccessor.HttpContext?.User;
+        if (principal is null)
+            return false;
+
+        // Ensure that they're a user within our database.
+        var user = await userService.GetUserAsync(principal);
+        if (user is null)
+            return false;
+
+        // Validate that the video exists.
+        return await videoService.ExistsFromUploaderAsync(resourceId, user.Id);
+    }
+
     public static async Task<bool> EnsureValidImageAsync(Guid resourceId, IHttpContextAccessor httpContextAccessor, IUserService userService, IImageCdnService imageCdnService)
     {
         // Get the currently authenticated user.

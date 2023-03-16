@@ -47,8 +47,11 @@ public interface IEventService
     /// <param name="tags">The tags of the event.</param>
     /// <param name="eventStars">The stars in this event.</param>
     /// <param name="updater">The person updating the group.</param>
+    /// <param name="autoStart">Whether or not to auto start the event when its start time elapses.</param>
+    /// <param name="hasVideo">Does this event have a video?</param>
+    /// <param name="video">The video resource id.</param>
     /// <returns>The updated event or null if it doesn't exist.</returns>
-    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart);
+    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video);
 
     /// <summary>
     /// Announces an event.
@@ -244,7 +247,7 @@ public class EventService : IEventService
         return _atlasContext.Events.AnyAsync(e => e.Id == id);
     }
 
-    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart)
+    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video)
     {
         _atlasLogger.LogDebug("Updating the event {EventId}", id);
 
@@ -268,6 +271,7 @@ public class EventService : IEventService
             atlasEvent.Media = media.Value;
         atlasEvent.Description = description;
         atlasEvent.AutoStart = autoStart;
+        atlasEvent.Video = hasVideo ? (video ?? atlasEvent.Video) : null;
 
         // Load and remove any previous tags.
         var eventTags = await _atlasContext.EventTags.Where(t => t.Event.Id == id).ToArrayAsync();

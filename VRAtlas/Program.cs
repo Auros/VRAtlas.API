@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -49,6 +51,7 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
@@ -80,6 +83,7 @@ builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
 
 // Option registration
 builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
+builder.Services.AddOptions<VRAtlasOptions>().BindConfiguration(VRAtlasOptions.Name).ValidateDataAnnotations();
 builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOptions.Name).ValidateDataAnnotations();
 
 // Other registration
@@ -87,7 +91,7 @@ builder.Services.AddSignalR();
 builder.Services.AddVRAtlasEndpoints();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSingleton<Hashids>(services => new(services.GetRequiredService<IConfiguration>().GetRequiredSection("VRAtlas").GetValue<string>("Salt"), 11));
+builder.Services.AddSingleton<Hashids>(services => new(services.GetRequiredService<IOptions<VRAtlasOptions>>().Value.Salt, 11));
 builder.Services.AddSingleton<IConnectionMultiplexer>(services => ConnectionMultiplexer.Connect(services.GetRequiredService<IConfiguration>().GetConnectionString("Redis")!));
 builder.Services.AddDbContext<AtlasContext>((container, options) =>
 {
@@ -157,6 +161,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPermissions(auth0.Domain, new string[]
     {
         "create:upload_url",
+        "create:upload_video",
         "create:groups",
         "update:groups",
         "create:events",
@@ -225,7 +230,13 @@ if (builder.Configuration.GetSection(WebPushOptions.Name).Exists())
 }
 
 var app = builder.Build();
+var cdnPath = app.Services.GetRequiredService<IOptions<VRAtlasOptions>>().Value.CdnPath;
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(cdnPath),
+    RequestPath = "/cdn"
+});
 app.UseSwagger(options =>
 {
     // When swagger is viewed through a reverse proxy, make sure to respect any added prefixes on the proxy.

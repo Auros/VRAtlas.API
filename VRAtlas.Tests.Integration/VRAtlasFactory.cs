@@ -85,7 +85,8 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 { "ConnectionStrings:Main", _mainDatabaseContainer.ConnectionString },
                 { "ConnectionStrings:Quartz", _quartzDatabaseContainer.ConnectionString },
                 { "ConnectionStrings:Redis", $"{_redisContainer.Hostname}:{_redisContainer.GetMappedPublicPort(6379)}" },
-                { "VRAtlas:Salt", nameof(VRAtlas) }
+                { "VRAtlas:Salt", nameof(VRAtlas) },
+                { "VRAtlas:CdnPath", "/" },
             });
         });
 

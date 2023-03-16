@@ -9,6 +9,7 @@ public static class DTOExtensions
             Id = atlasEvent.Id,
             Name = atlasEvent.Name,
             Media = atlasEvent.Media,
+            Video = atlasEvent.Video,
             Status = atlasEvent.Status,
             EndTime = atlasEvent.EndTime,
             AutoStart = atlasEvent.AutoStart,

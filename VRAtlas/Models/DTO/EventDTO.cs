@@ -37,6 +37,9 @@ public class EventDTO
     [JsonPropertyName("media")]
     public required Guid Media { get; init; }
 
+    [JsonPropertyName("video")]
+    public Guid? Video { get; init; }
+
     [JsonPropertyName("autoStart")]
     public required bool AutoStart { get; init; }
 }

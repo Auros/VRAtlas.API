@@ -1,4 +1,6 @@
 FROM jrottenberg/ffmpeg:4.1-alpine AS ffmpeg
+ENV LD_LIBRARY_PATH=/usr/local/lib
+COPY --from=jrottenberg/ffmpeg /usr/local /usr/local/
 
 # https://hub.docker.com/_/microsoft-dotnet
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build
@@ -24,7 +26,6 @@ RUN dotnet publish -c Release -o out -r linux-musl-arm64 --self-contained false 
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine-arm64v8
-COPY --from=ffmpeg / /
 
 WORKDIR /app
 COPY --from=build /app/VRAtlas/out ./

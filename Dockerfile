@@ -1,3 +1,8 @@
+# install ffmpeg
+FROM jrottenberg/ffmpeg:alpine AS FFmpeg
+FROM node:16-alpine
+COPY --from=FFmpeg / /
+
 # https://hub.docker.com/_/microsoft-dotnet
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /app
@@ -19,9 +24,6 @@ COPY VRAtlas.Tests.Integration/. ./VRAtlas.Tests.Integration/
 
 WORKDIR /app/VRAtlas
 RUN dotnet publish -c Release -o out 
-
-# install ffmpeg
-RUN apt-get -y update && apt-get -y upgrade && apt-get install -y ffmpeg
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0

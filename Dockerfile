@@ -20,6 +20,9 @@ COPY VRAtlas.Tests.Integration/. ./VRAtlas.Tests.Integration/
 WORKDIR /app/VRAtlas
 RUN dotnet publish -c Release -o out 
 
+# install ffmpeg
+RUN apt-get -y update && apt-get -y upgrade && apt-get install -y ffmpeg
+
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /app

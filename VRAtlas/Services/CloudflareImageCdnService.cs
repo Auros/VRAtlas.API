@@ -14,6 +14,14 @@ public interface IImageCdnService
     Task<Guid> UploadAsync(Uri source, string? metadata);
 
     /// <summary>
+    /// Upload an image based from an image stream.
+    /// </summary>
+    /// <param name="imageStream">The stream containing the image data.</param>
+    /// <param name="fileName">The name of the file.</param>
+    /// <returns>The resource identifier for the uploaded image.</returns>
+    Task<Guid> UploadAsync(Stream imageStream, string fileName);
+
+    /// <summary>
     /// Gets a URL to send upload image data to.
     /// </summary>
     /// <param name="uploaderId">The id of the user who is allowed to upload an image with the resulting uri.</param>
@@ -98,6 +106,39 @@ public class CloudflareImageCdnService : IImageCdnService
         var id = body!.Result.Id;
 
         _atlasLogger.LogInformation("Successfully uploaded the image from url {Source} to resource identifier {ResourceId}", source, id);
+
+        return id;
+    }
+
+    public async Task<Guid> UploadAsync(Stream imageStream, string fileName)
+    {
+        var uploadUrl = await GetUploadUriAsync();
+
+        _atlasLogger.LogInformation("Uploading {FileName} to Cloudflare", fileName);
+        var client = _httpClientFactory.CreateClient(nameof(VRAtlas));
+
+        // Setup the http content required for the upload.
+        // This is where we provide the stream body.
+        using MultipartFormDataContent content = new()
+        {
+            { new StreamContent(imageStream), "file", fileName }
+        };
+
+        // Send the request.
+        _atlasLogger.LogInformation("Uploading to Cloudflare via File Upload");
+        var response = await client.PostAsync(uploadUrl, content);
+
+        // Ensure the request passes.
+        if (!response.IsSuccessStatusCode)
+        {
+            _atlasLogger.LogCritical("Failed to upload image {FileName} from url, {StatusCode}", fileName, response.StatusCode);
+            throw new InvalidOperationException("Could not upload image from file to Cloudflare");
+        }
+
+        var body = await response.Content.ReadFromJsonAsync<CloudflareResult<UploadSourceResult>>();
+        var id = body!.Result.Id;
+
+        _atlasLogger.LogInformation("Successfully uploaded the image from the file {FileName} to resource identifier {ResourceId}", fileName, id);
 
         return id;
     }

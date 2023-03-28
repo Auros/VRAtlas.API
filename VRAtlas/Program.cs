@@ -30,6 +30,7 @@ using VRAtlas.Events;
 using VRAtlas.Jobs;
 using VRAtlas.Listeners;
 using VRAtlas.Logging;
+using VRAtlas.Models.Crossposters;
 using VRAtlas.Options;
 using VRAtlas.Services;
 
@@ -43,6 +44,7 @@ var logger = new LoggerConfiguration()
 Log.Logger = logger;
 
 var crosspostingEnabled = builder.Configuration.GetSection(CrosspostingOptions.Name).Exists();
+var crossposting = builder.Configuration.GetSection(CrosspostingOptions.Name).Get<CrosspostingOptions>() ?? new CrosspostingOptions();
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>() ?? new Auth0Options { Audience = string.Empty, ClientId = string.Empty, ClientSecret = string.Empty, Domain = string.Empty };
 var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>() ?? new CloudflareOptions { ApiKey = string.Empty, ApiUrl = new Uri("http://localhost") };
 
@@ -55,6 +57,7 @@ builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IUserGrantService, UserGrantService>();
+builder.Services.AddScoped<ICrosspostingService, CrosspostingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPushNotificationService, PushNotificationService>();
 
@@ -69,6 +72,10 @@ builder.Services.AddScopedEventListener<EventStarInvitedEvent, EventStarInvitati
 builder.Services.AddScopedEventListener<EventStarAcceptedInviteEvent, EventStarConfirmationListener>();
 builder.Services.AddScopedEventListener<EventScheduledEvent, EventScheduleSchedulingListener>();
 builder.Services.AddScopedEventListener<NotificationCreatedEvent, HubNotificationCreationListener>();
+if (crosspostingEnabled && crossposting.VRCC is not null)
+{
+    builder.Services.AddScopedEventListener<CrosspostSynchronizationEvent, VRCCSynchronizationListener>();
+}
 
 // Jwt registration
 builder.Services.AddSingleton<JwtEncoder>();
@@ -173,6 +180,7 @@ builder.Services.AddAuthorization(options =>
         "admin:reschedule"
     });
 });
+builder.Services.AddHttpClient(nameof(VRAtlas));
 builder.Services.AddHttpClient("Auth0", (container, client) =>
 {
     client.BaseAddress = new Uri(container.GetRequiredService<IOptions<Auth0Options>>().Value.Domain);
@@ -183,6 +191,18 @@ builder.Services.AddHttpClient("Cloudflare", (container, client) =>
     client.BaseAddress = options.ApiUrl;
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
 });
+if (crosspostingEnabled && crossposting.VRCC is not null)
+{
+    builder.Services.AddHttpClient(nameof(VRCC), (container, client) =>
+    {
+        var options = container.GetRequiredService<IOptions<CrosspostingOptions>>().Value.VRCC;
+        if (options is null)
+            return;
+
+        client.BaseAddress = options.ApiUrl;
+    });
+}
+
 builder.Services.AddQuartz(options =>
 {
     options.UseMicrosoftDependencyInjectionJobFactory();

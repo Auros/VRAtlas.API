@@ -50,8 +50,9 @@ public interface IEventService
     /// <param name="autoStart">Whether or not to auto start the event when its start time elapses.</param>
     /// <param name="hasVideo">Does this event have a video?</param>
     /// <param name="video">The video resource id.</param>
+    /// <param name="crosspost">The crosspost source.</param>
     /// <returns>The updated event or null if it doesn't exist.</returns>
-    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video);
+    Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video, string? crosspost);
 
     /// <summary>
     /// Announces an event.
@@ -247,10 +248,8 @@ public class EventService : IEventService
         return _atlasContext.Events.AnyAsync(e => e.Id == id);
     }
 
-    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video)
+    public async Task<Event?> UpdateEventAsync(Guid id, string name, string description, Guid? media, IEnumerable<string> tags, IEnumerable<EventStarInfo> eventStars, Guid updater, bool autoStart, bool hasVideo, Guid? video, string? crosspost)
     {
-        _atlasLogger.LogDebug("Updating the event {EventId}", id);
-
         // Pre-create any tags up here.
         // TODO: Reuse the captured ids.
         foreach (var tag in tags)
@@ -266,12 +265,16 @@ public class EventService : IEventService
         if (atlasEvent is null)
             return null;
 
+        if (atlasEvent.Crosspost is null)
+            _atlasLogger.LogDebug("Updating the event {EventId}", id);
+
         atlasEvent.Name = name;
         if (media.HasValue)
             atlasEvent.Media = media.Value;
         atlasEvent.Description = description;
         atlasEvent.AutoStart = autoStart;
         atlasEvent.Video = hasVideo ? (video ?? atlasEvent.Video) : null;
+        atlasEvent.Crosspost = crosspost;
 
         // Load and remove any previous tags.
         var eventTags = await _atlasContext.EventTags.Where(t => t.Event.Id == id).ToArrayAsync();
@@ -345,7 +348,9 @@ public class EventService : IEventService
 
         // Return a fresh event for consumers (since we updated the object indirectly)
         atlasEvent = await GetEventByIdAsync(id);
-        _atlasLogger.LogInformation("Successfully updated the event {EventId}", id);
+
+        if (atlasEvent?.Crosspost is null)
+            _atlasLogger.LogInformation("Successfully updated the event {EventId}", id);
 
         return atlasEvent;
     }
@@ -469,7 +474,9 @@ public class EventService : IEventService
         atlasEvent.StartTime = startTime;
 
         await _atlasContext.SaveChangesAsync();
-        _atlasLogger.LogInformation("Successfully scheduled event {EventId}", id);
+
+        if (atlasEvent.Crosspost is null)
+            _atlasLogger.LogInformation("Successfully scheduled event {EventId}", id);
 
         if ((!oldTime.HasValue && !oldEndTime.HasValue) || ((oldTime.HasValue || oldEndTime.HasValue) && (startTime != oldTime || endTime != oldEndTime)))
         {

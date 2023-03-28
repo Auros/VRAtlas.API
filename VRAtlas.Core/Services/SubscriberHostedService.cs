@@ -36,7 +36,14 @@ internal class SubscriberHostedService<T> : IHostedService, IMessageHandler<T>
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _disposable?.Dispose();
+        try
+        {
+            _disposable?.Dispose();
+        }
+        catch
+        {
+
+        }
         return Task.CompletedTask;
     }
 

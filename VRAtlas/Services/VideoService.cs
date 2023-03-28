@@ -12,7 +12,8 @@ namespace VRAtlas.Services;
 public interface IVideoService
 {
     Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId);
-    Task<Guid> SaveAsync(string filePath, Guid userId, long length);
+    Task<Guid> SaveAsync(string filePath, Guid? userId, long? length);
+    Task<FileInfo> ScreenshotAsync(string filePath);
 }
 
 public class VideoService : IVideoService
@@ -32,7 +33,7 @@ public class VideoService : IVideoService
 
     public Task<bool> ExistsFromUploaderAsync(Guid id, Guid userId) => _atlasContext.UploadRecords.AnyAsync(r => r.UserId == userId && r.Resource == id);
 
-    public async Task<Guid> SaveAsync(string filePath, Guid userId, long length)
+    public async Task<Guid> SaveAsync(string filePath, Guid? userId, long? length)
     {
         Guid id = Guid.NewGuid();
         var options = _options.Value;
@@ -65,19 +66,32 @@ public class VideoService : IVideoService
             File.Move(Path.Combine(options.CdnPath, targetTemporaryWebmName), Path.Combine(options.CdnPath, targetWebmName));
         });
 
-        _atlasLogger.LogDebug("Creating record in database");
-
-        UploadRecord record = new()
+        if (userId.HasValue && length.HasValue)
         {
-            Size = length,
-            Resource = id,
-            UploadedAt = now,
-            UserId = userId
-        };
+            _atlasLogger.LogDebug("Creating record in database");
 
-        _atlasContext.UploadRecords.Add(record);
-        await _atlasContext.SaveChangesAsync();
+            UploadRecord record = new()
+            {
+                Resource = id,
+                UploadedAt = now,
+                Size = length.Value,
+                UserId = userId.Value
+            };
 
-        return record.Resource;
+            _atlasContext.UploadRecords.Add(record);
+            await _atlasContext.SaveChangesAsync();
+        }
+
+        return id;
+    }
+
+    public async Task<FileInfo> ScreenshotAsync(string filePath)
+    {
+        var options = _options.Value;
+
+        var id = Guid.NewGuid();
+        var savePath = Path.Combine(options.CdnPath, $"{id}.png");
+        await FFMpeg.SnapshotAsync(filePath, savePath);
+        return new FileInfo(savePath);
     }
 }

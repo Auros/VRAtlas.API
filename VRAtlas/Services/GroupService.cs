@@ -23,6 +23,13 @@ public interface IGroupService
     Task<Group?> GetGroupByIdAsync(Guid id);
 
     /// <summary>
+    /// Gets a group by it's name.
+    /// </summary>
+    /// <param name="name">The name of the group.</param>
+    /// <returns>The group, if it exists.</returns>
+    Task<Group?> GetGroupByNameAsync(string name);
+
+    /// <summary>
     /// Gets all the groups that a user is in.
     /// </summary>
     /// <param name="userId">The id of the user.</param>
@@ -37,8 +44,9 @@ public interface IGroupService
     /// <param name="icon">The icon of the group.</param>
     /// <param name="banner">The banner of the group.</param>
     /// <param name="ownerId">The owner of the group's id.</param>
+    /// <param name="identity">The identity of the group.</param>
     /// <returns>The created group.</returns>
-    Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid ownerId);
+    Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid? ownerId, string? identity = null);
 
     /// <summary>
     /// Adds a member to a group. If the user is already in the group and the role provided is different from their current, it will change the role.
@@ -112,7 +120,7 @@ public class GroupService : IGroupService
             .FirstOrDefaultAsync(g => g.Id == id);
     }
 
-    public async Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid ownerId)
+    public async Task<Group> CreateGroupAsync(string name, string description, Guid icon, Guid banner, Guid? ownerId, string? identity = null)
     {
         // Ensure that the group name is unique.
         var groupNameExists = await _atlasContext.Groups.AnyAsync(g => g.Name.ToLower() == name.ToLower());
@@ -122,16 +130,27 @@ public class GroupService : IGroupService
             throw new InvalidOperationException($"Group name '{name}' already exists");
         }
 
-        // Ensure that the owner attached to this group exists.
-        var owner = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == ownerId);
-        if (owner is null)
-        {
-            _atlasLogger.LogWarning("Unable to create a group, could not find the owning user");
-            throw new InvalidOperationException($"A user with the id '{ownerId}' does not exist.");
-        }
-
         // Get the current time used for storing the time the owner "joins" and when the group was created.
         var now = _clock.GetCurrentInstant();
+
+        List<GroupMember> members = new();
+
+        if (ownerId.HasValue)
+        {
+            // Ensure that the owner attached to this group exists.
+            var owner = await _atlasContext.Users.FirstOrDefaultAsync(u => u.Id == ownerId);
+            if (owner is null)
+            {
+                _atlasLogger.LogWarning("Unable to create a group, could not find the owning user");
+                throw new InvalidOperationException($"A user with the id '{ownerId}' does not exist.");
+            }
+            members.Add(new GroupMember
+            {
+                User = owner,
+                JoinedAt = now,
+                Role = GroupMemberRole.Owner,
+            });
+        }
 
         // Construct the group object
         Group group = new()
@@ -142,15 +161,8 @@ public class GroupService : IGroupService
             Icon = icon,
             Banner = banner,
             CreatedAt = now,
-            Members = new List<GroupMember>()
-            {
-                new GroupMember
-                {
-                    User = owner,
-                    JoinedAt = now,
-                    Role = GroupMemberRole.Owner,
-                }
-            },
+            Members = members,
+            Identity = identity
         };
 
         _atlasContext.Groups.Add(group);
@@ -304,5 +316,14 @@ public class GroupService : IGroupService
     public Task<int> GetGroupCountByRoleAsync(Guid userId, GroupMemberRole role)
     {
         return _atlasContext.GroupMembers.CountAsync(m => m.User!.Id == userId && m.Role == role);
+    }
+
+    public Task<Group?> GetGroupByNameAsync(string name)
+    {
+        return _atlasContext.Groups
+            .AsNoTracking()
+            .Include(g => g.Members)
+                .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(g => g.Name == name);
     }
 }

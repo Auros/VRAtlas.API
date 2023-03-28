@@ -174,7 +174,7 @@ public class EventEndpoints : IEndpointCollection
 
         var (id, name, description, media, tags, stars, autoStart, hasVideo, videoId) = body;
 
-        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart, hasVideo, videoId);
+        var atlasEvent = await eventService.UpdateEventAsync(id, name, description, media, tags, stars, user.Id, autoStart, hasVideo, videoId, null);
 
         await cache.EvictByTagAsync("events", token);
 

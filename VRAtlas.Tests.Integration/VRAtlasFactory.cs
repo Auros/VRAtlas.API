@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Testcontainers.PostgreSql;
 using VRAtlas.Authorization;
 using VRAtlas.Options;
 using VRAtlas.Tests.Integration.Servers;
@@ -21,8 +22,8 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly Auth0ApiServer _auth0ApiServer;
     private readonly CloudflareApiServer _cloudflareApiServer;
-    private readonly PostgreSqlTestcontainer _mainDatabaseContainer;
-    private readonly PostgreSqlTestcontainer _quartzDatabaseContainer;
+    private readonly PostgreSqlContainer _mainDatabaseContainer;
+    private readonly PostgreSqlContainer _quartzDatabaseContainer;
     private readonly IContainer _redisContainer;
     private readonly Auth0Options _auth0Options = new()
     {
@@ -37,28 +38,17 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
         _auth0ApiServer = new Auth0ApiServer();
         _cloudflareApiServer = new CloudflareApiServer();
 
-        // Currently, there is a big refactor/migration going on with Testcontainers modules, so the warnings are suppressed:
-        // https://github.com/testcontainers/testcontainers-dotnet/issues/750
-
-#pragma warning disable 618
-        _mainDatabaseContainer = new ContainerBuilder<PostgreSqlTestcontainer>()
-            .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:latest")
-            {
-                Database = "vratlas_tests",
-                Username = nameof(VRAtlas),
-                Password = nameof(VRAtlas),
-            })
+        _mainDatabaseContainer = new PostgreSqlBuilder()
+            .WithUsername(nameof(VRAtlas))
+            .WithPassword(nameof(VRAtlas))
+            .WithDatabase("vratlas_tests")
             .Build();
 
-        _quartzDatabaseContainer = new ContainerBuilder<PostgreSqlTestcontainer>()
-            .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:latest")
-            {
-                Database = "vratlas_job_store_tests",
-                Username = nameof(VRAtlas),
-                Password = nameof(VRAtlas),
-            })
+        _quartzDatabaseContainer = new PostgreSqlBuilder()
+            .WithUsername(nameof(VRAtlas))
+            .WithPassword(nameof(VRAtlas))
+            .WithDatabase("vratlas_job_store_tests")
             .Build();
-#pragma warning restore 618
 
         _redisContainer = new ContainerBuilder()
             .WithName(Guid.NewGuid().ToString("D"))
@@ -82,8 +72,8 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 { "Auth0:Audience", _auth0Options.Audience },
                 { "Auth0:ClientId", _auth0Options.ClientId },
                 { "Auth0:ClientSecret", _auth0Options.ClientSecret },
-                { "ConnectionStrings:Main", _mainDatabaseContainer.ConnectionString },
-                { "ConnectionStrings:Quartz", _quartzDatabaseContainer.ConnectionString },
+                { "ConnectionStrings:Main", _mainDatabaseContainer.GetConnectionString() },
+                { "ConnectionStrings:Quartz", _quartzDatabaseContainer.GetConnectionString() },
                 { "ConnectionStrings:Redis", $"{_redisContainer.Hostname}:{_redisContainer.GetMappedPublicPort(6379)}" },
                 { "VRAtlas:Salt", nameof(VRAtlas) },
                 { "VRAtlas:CdnPath", "/" },
@@ -95,7 +85,7 @@ public class VRAtlasFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.Configure<QuartzOptions>(options =>
             {
                 options["quartz.scheduler.instanceName"] = "QuartzScheduler_Tests_" + _quartzDatabaseContainer.Name;
-                options["quartz.dataSource.default.connectionString"] = _quartzDatabaseContainer.ConnectionString;
+                options["quartz.dataSource.default.connectionString"] = _quartzDatabaseContainer.GetConnectionString();
             });
             services.AddAuthentication(options =>
             {

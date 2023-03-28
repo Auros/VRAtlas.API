@@ -33,4 +33,6 @@ public class Event
     public bool AutoStart { get; set; }
 
     public RSVP? RSVP { get; set; }
+
+    public string? Crosspost { get; set; }
 }

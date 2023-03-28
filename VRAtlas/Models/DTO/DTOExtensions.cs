@@ -13,6 +13,7 @@ public static class DTOExtensions
             Status = atlasEvent.Status,
             EndTime = atlasEvent.EndTime,
             AutoStart = atlasEvent.AutoStart,
+            Crosspost = atlasEvent.Crosspost,
             StartTime = atlasEvent.StartTime,
             Description = atlasEvent.Description,
             Tags = atlasEvent.Tags.Map(),
@@ -29,6 +30,7 @@ public static class DTOExtensions
             Name = group.Name,
             Icon = group.Icon,
             Banner = group.Banner,
+            Identity = group.Identity,
             Description = group.Description,
             Members = group.Members.Map(),
         };

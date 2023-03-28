@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -43,6 +42,7 @@ var logger = new LoggerConfiguration()
 
 Log.Logger = logger;
 
+var crosspostingEnabled = builder.Configuration.GetSection(CrosspostingOptions.Name).Exists();
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>() ?? new Auth0Options { Audience = string.Empty, ClientId = string.Empty, ClientSecret = string.Empty, Domain = string.Empty };
 var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>() ?? new CloudflareOptions { ApiKey = string.Empty, ApiUrl = new Uri("http://localhost") };
 
@@ -85,6 +85,9 @@ builder.Services.AddSingleton(typeof(IAtlasLogger<>), typeof(AtlasLogger<>));
 builder.Services.AddOptions<Auth0Options>().BindConfiguration(Auth0Options.Name).ValidateDataAnnotations();
 builder.Services.AddOptions<VRAtlasOptions>().BindConfiguration(VRAtlasOptions.Name).ValidateDataAnnotations();
 builder.Services.AddOptions<CloudflareOptions>().BindConfiguration(CloudflareOptions.Name).ValidateDataAnnotations();
+
+if (crosspostingEnabled)
+    builder.Services.AddOptions<CrosspostingOptions>().BindConfiguration(CrosspostingOptions.Name).ValidateDataAnnotations();
 
 // Other registration
 builder.Services.AddSignalR();

@@ -19,4 +19,6 @@ public class Group
     public Guid Banner { get; set; }
 
     public Instant CreatedAt { get; set; }
+
+    public string? Identity { get; set; }
 }

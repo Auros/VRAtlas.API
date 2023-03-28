@@ -42,4 +42,8 @@ public class EventDTO
 
     [JsonPropertyName("autoStart")]
     public required bool AutoStart { get; init; }
+
+    [JsonPropertyName("crosspost")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Crosspost { get; init; }
 }

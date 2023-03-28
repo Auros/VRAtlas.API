@@ -23,4 +23,8 @@ public class GroupDTO
 
     [JsonPropertyName("banner")]
     public required Guid Banner { get; init; }
+
+    [JsonPropertyName("identity")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Identity { get; init; }
 }

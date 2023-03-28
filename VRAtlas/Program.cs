@@ -44,7 +44,7 @@ var logger = new LoggerConfiguration()
 Log.Logger = logger;
 
 var crosspostingEnabled = builder.Configuration.GetSection(CrosspostingOptions.Name).Exists();
-var crossposting = builder.Configuration.GetSection(CrosspostingOptions.Name).Get<CrosspostingOptions>() ?? new CrosspostingOptions();
+var crossposting = builder.Configuration.GetSection(CrosspostingOptions.Name).Get<CrosspostingOptions>();
 var auth0 = builder.Configuration.GetSection(Auth0Options.Name).Get<Auth0Options>() ?? new Auth0Options { Audience = string.Empty, ClientId = string.Empty, ClientSecret = string.Empty, Domain = string.Empty };
 var cloudflare = builder.Configuration.GetSection(CloudflareOptions.Name).Get<CloudflareOptions>() ?? new CloudflareOptions { ApiKey = string.Empty, ApiUrl = new Uri("http://localhost") };
 
@@ -72,7 +72,7 @@ builder.Services.AddScopedEventListener<EventStarInvitedEvent, EventStarInvitati
 builder.Services.AddScopedEventListener<EventStarAcceptedInviteEvent, EventStarConfirmationListener>();
 builder.Services.AddScopedEventListener<EventScheduledEvent, EventScheduleSchedulingListener>();
 builder.Services.AddScopedEventListener<NotificationCreatedEvent, HubNotificationCreationListener>();
-if (crosspostingEnabled && crossposting.VRCC is not null)
+if (crosspostingEnabled && crossposting?.VRCC is not null)
 {
     builder.Services.AddScopedEventListener<CrosspostSynchronizationEvent, VRCCSynchronizationListener>();
 }
@@ -191,7 +191,7 @@ builder.Services.AddHttpClient("Cloudflare", (container, client) =>
     client.BaseAddress = options.ApiUrl;
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
 });
-if (crosspostingEnabled && crossposting.VRCC is not null)
+if (crosspostingEnabled && crossposting?.VRCC is not null)
 {
     builder.Services.AddHttpClient(nameof(VRCC), (container, client) =>
     {
@@ -231,6 +231,25 @@ builder.Services.AddQuartz(options =>
             jc.WithIdentity(EventReminderJob.Key);
             jc.WithDescription("Activates when an event reminder point gets hit.");
         });
+
+        if (crosspostingEnabled && crossposting is not null)
+        {
+            options.AddJob<CrosspostSynchronizationJob>(jc =>
+            {
+                jc.StoreDurably();
+                jc.WithIdentity(CrosspostSynchronizationJob.Key);
+                jc.WithDescription("Actives when we want to synchronize crossposts.");
+            });
+            options.AddTrigger(o => o
+                .ForJob(CrosspostSynchronizationJob.Key)
+                .WithIdentity("crosspost-synchronizer")
+                .StartNow()
+                .WithSimpleSchedule(s =>
+                    s.WithIntervalInMinutes(crossposting.SynchronizationIntervalInMinutes)
+                    .RepeatForever()
+                )
+            );
+        }
     });
 });
 builder.Services.AddQuartzServer(options =>

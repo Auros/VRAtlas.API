@@ -112,7 +112,7 @@ public class CloudflareImageCdnService : IImageCdnService
 
     public async Task<Guid> UploadAsync(Stream imageStream, string fileName)
     {
-        var uploadUrl = await GetUploadUriAsync();
+        var uploadUrl = await GetUploadUriAsync(Guid.Empty);
 
         _atlasLogger.LogInformation("Uploading {FileName} to Cloudflare", fileName);
         var client = _httpClientFactory.CreateClient(nameof(VRAtlas));

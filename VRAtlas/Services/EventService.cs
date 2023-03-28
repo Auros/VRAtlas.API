@@ -24,6 +24,13 @@ public interface IEventService
     /// <returns>The event, or null if it does not exist.</returns>
     Task<Event?> GetEventByIdAsync(Guid id);
 
+    /// <summary>
+    /// Gets an event with a specific crosspost if it exists.
+    /// </summary>
+    /// <param name="crosspost">The crosspost source of the event.</param>
+    /// <returns>The event, or null if it does not exist.</returns>
+    Task<Event?> GetEventByCrosspostAsync(string crosspost);
+
     public record struct EventCollectionQueryOptions(Guid? Cursor, Guid? Group, EventStatus? Status, int PageSize = 25);
     public record struct EventCollectionQueryResult(IEnumerable<Event> Events, Guid? NextCursor);
     Task<EventCollectionQueryResult> QueryEventsAsync(EventCollectionQueryOptions options);
@@ -554,5 +561,21 @@ public class EventService : IEventService
         if (data is null)
             return null;
         return data.Status;
+    }
+
+    public Task<Event?> GetEventByCrosspostAsync(string crosspost)
+    {
+        return _atlasContext.Events
+            .AsNoTracking()
+            .Include(e => e.Stars)
+                .ThenInclude(s => s.User)
+            .Include(e => e.Owner)
+                .ThenInclude(g => g!.Members)
+                    .ThenInclude(m => m.User)
+            .Include(e => e.Tags)
+                .ThenInclude(e => e.Tag)
+            .Include(e => e.RSVP)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(e => e.Crosspost == crosspost);
     }
 }

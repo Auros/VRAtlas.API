@@ -1,4 +1,6 @@
-﻿using VRAtlas.Models;
+﻿using MessagePipe;
+using VRAtlas.Events;
+using VRAtlas.Models;
 using VRAtlas.Models.Crossposters;
 
 namespace VRAtlas.Services;
@@ -11,14 +13,18 @@ public interface ICrosspostingService
     /// <param name="source">The group source info.</param>
     /// <returns>The crossposter's group.</returns>
     Task<Group> GetCrossposterGroupAsync(CrosspostSource source);
+
+    void TriggerCrosspostingSynchronizationRoutine();
 }
 
 public class CrosspostingService : ICrosspostingService
 {
     private readonly IGroupService _groupService;
+    private readonly IPublisher<CrosspostSynchronizationEvent> _publisher;
 
-    public CrosspostingService(IGroupService groupService)
+    public CrosspostingService(IGroupService groupService, IPublisher<CrosspostSynchronizationEvent> publisher)
     {
+        _publisher = publisher;
         _groupService = groupService;
     }
 
@@ -37,5 +43,10 @@ public class CrosspostingService : ICrosspostingService
             group = await _groupService.ModifyGroupAsync(group.Id, source.Description ?? string.Empty, source.Icon, source.Banner);
 
         return group;
+    }
+
+    public void TriggerCrosspostingSynchronizationRoutine()
+    {
+        _publisher.Publish(new CrosspostSynchronizationEvent());
     }
 }

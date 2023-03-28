@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.Options;
 using NodaTime;
 using System.Text.Json.Serialization;
 using VRAtlas.Core.Models;
@@ -17,6 +18,7 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
     private readonly IEventService _eventService;
     private readonly IVideoService _videoService;
     private readonly IImageCdnService _imageCdnService;
+    private readonly IOutputCacheStore _outputCacheStore;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptions<VRAtlasOptions> _vrAtlasOptions;
     private readonly ICrosspostingService _crosspostingService;
@@ -26,6 +28,7 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
         IEventService eventService,
         IVideoService videoService,
         IImageCdnService imageCdnService,
+        IOutputCacheStore outputCacheStore,
         IHttpClientFactory httpClientFactory,
         IOptions<VRAtlasOptions> vrAtlasOptions,
         ICrosspostingService crosspostingService,
@@ -37,6 +40,7 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
         _videoService = videoService;
         _vrAtlasOptions = vrAtlasOptions;
         _imageCdnService = imageCdnService;
+        _outputCacheStore = outputCacheStore;
         _httpClientFactory = httpClientFactory;
         _crosspostingService = crosspostingService;
         _crosspostingOptions = crosspostingOptions;
@@ -56,18 +60,23 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
         structuredEvents ??= new StructuredEvents { Current = Array.Empty<VRCCEvent>(), Future = Array.Empty<VRCCEvent>(), Past = Array.Empty<VRCCEvent>() };
         var vrccEvents = structuredEvents.Future.Concat(structuredEvents.Current);
 
+        int count = 0;
         var cdnPath = _vrAtlasOptions.Value.CdnPath;
         foreach (var vrccEvent in vrccEvents)
         {
             try
             {
                 Guid? videoResourceId = null;
-                var atlasEvent = await _eventService.GetEventByIdAsync(vrccEvent.Id);
+                var crosspostIdentifier = $"{vrcc.Source}event/{vrccEvent.Id}"; // The url on VRCC
+                var atlasEvent = await _eventService.GetEventByCrosspostAsync(crosspostIdentifier);
                 if (atlasEvent is null)
                 {
                     _atlasLogger.LogInformation("Synchronizing new VRCC event {EventName} ({EventId})", vrccEvent.Name, vrccEvent.Id);
 
                     Guid resourceId;
+                    Stream targetImageStream;
+                    string targetFileName;
+                    FileInfo? targetImageFile = null;
 
                     // Generate poster
                     var flyerUrlPath = vrccEvent.FlyerLink.AbsolutePath;
@@ -85,50 +94,63 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
                         await stream.CopyToAsync(fileStream);
                         await fileStream.DisposeAsync();
 
+                        // Step 2: Take a screenshot of the video and then save it.
                         _atlasLogger.LogInformation("Generated local temporary file, generating screenshot");
-                        // Step 2: Take a screenshot of the video and then upload it.
-                        var targetImageFile = await _videoService.ScreenshotAsync(filePath);
+                        targetImageFile = await _videoService.ScreenshotAsync(filePath);
                         videoResourceId = await _videoService.SaveAsync(filePath, null, null);
 
-                        _atlasLogger.LogInformation("Deleting local temporary file");
                         // Step 3: Delete the temporary video
+                        _atlasLogger.LogInformation("Deleting local temporary file");
                         File.Delete(filePath);
 
-                        _atlasLogger.LogInformation("Uploading screenshot to image cdn");
-                        // Step 4: Upload it to the image cdn.
-                        using var imageStream = targetImageFile.OpenRead();
-                        resourceId = await _imageCdnService.UploadAsync(imageStream, $"{fileName}.png");
+                        targetFileName = targetImageFile.Name;
+                        targetImageStream = targetImageFile.OpenRead();
                     }
                     else
                     {
-                        _atlasLogger.LogInformation("Uploading static image poster");
-                        // Upload the flyer to our image cdn.
-                        resourceId = await _imageCdnService.UploadAsync(vrccEvent.FlyerLink, null);
+                        // Prepare static poster
+                        var fileName = Path.GetFileNameWithoutExtension(vrccEvent.FlyerLink.AbsolutePath);
+                        targetImageStream = await vrAtlasClient.GetStreamAsync(vrccEvent.FlyerLink);
+                        targetFileName = fileName;
                     }
 
-                    _atlasLogger.LogInformation("Generating the event...");
+                    // Upload the flyer to our image cdn.
+                    _atlasLogger.LogInformation("Uploading static image poster");
+                    try
+                    {
+                        resourceId = await _imageCdnService.UploadAsync(targetImageStream, targetFileName);
+                    }
+                    finally
+                    {
+                        await targetImageStream.DisposeAsync();
+                        targetImageFile?.Delete();
+                    }
+
                     // Create the event
+                    _atlasLogger.LogInformation("Generating the event...");
                     atlasEvent = await _eventService.CreateEventAsync(vrccEvent.Name, group.Id, resourceId);
                 }
                 if (atlasEvent.Status == EventStatus.Announced || atlasEvent.Status == EventStatus.Unlisted)
                 {
                     // Update non-media data
-                    var startTime = Instant.FromUnixTimeSeconds(vrccEvent.StartTimestamp);
+                    var startTime = Instant.FromUnixTimeSeconds((long)vrccEvent.StartTimestamp);
                     var endTime = startTime.Plus(Duration.FromHours(vrcc.EventDurationInHours));
 
                     var hasVideo = videoResourceId.HasValue || atlasEvent.Video.HasValue;
 
                     // Update the event info
                     // We pass in an empty guid for the updater property but its not used based on our other inputs (only used if tags.Length > 0 || stars.Length > 0)
-                    var sourceUrl = $"{vrcc.Source}event/{vrccEvent.Id}"; // The url to the event on VRCC
-                    await _eventService.UpdateEventAsync(atlasEvent.Id, atlasEvent.Name, atlasEvent.Description, null, Enumerable.Empty<string>(), Enumerable.Empty<EventStarInfo>(), Guid.Empty, true, hasVideo, videoResourceId, sourceUrl);
+                    await _eventService.UpdateEventAsync(atlasEvent.Id, vrccEvent.Name, vrccEvent.Description, null, Enumerable.Empty<string>(), Enumerable.Empty<EventStarInfo>(), Guid.Empty, true, hasVideo, videoResourceId, crosspostIdentifier);
 
-                    // Schedule the event info
-                    await _eventService.ScheduleEventAsync(atlasEvent.Id, startTime, endTime);
+                    // Schedule the event info if necessary
+                    if (atlasEvent.StartTime != startTime)
+                        await _eventService.ScheduleEventAsync(atlasEvent.Id, startTime, endTime);
 
                     // Announce the event if it hasn't been yet.
                     if (atlasEvent.Status == EventStatus.Unlisted)
-                        await _eventService.AnnounceEventAsync(group.Id);
+                        await _eventService.AnnounceEventAsync(atlasEvent.Id);
+
+                    count++;
                 }
             }
             catch (Exception e)
@@ -136,6 +158,12 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
                 _atlasLogger.LogCritical("Could not synchronize VRCC event {EventName} ({EventId}), {Exception}", vrccEvent.Name, vrccEvent.Name, e);
             }
         }
+
+        if (count == 0)
+            return;
+
+        // Clear event cache if we've made changes
+        await _outputCacheStore.EvictByTagAsync("events", default);
     }
 
     private class VRCCEvent
@@ -150,7 +178,7 @@ public class VRCCSynchronizationListener : IScopedEventListener<CrosspostSynchro
         public required string Description { get; set; }
 
         [JsonPropertyName("start_time_instant")]
-        public required long StartTimestamp { get; set; }
+        public required double StartTimestamp { get; set; } // the timestamp in the api response has a decimal point... :Aware:
 
         [JsonPropertyName("flyer_link")]
         public required Uri FlyerLink { get; set; }

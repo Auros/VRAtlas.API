@@ -248,12 +248,11 @@ public class EventEndpoints : IEndpointCollection
         IQueryable<Event> Query(EventStatus status) => atlasContext.Events
             .Include(e => e.Tags)
             .ThenInclude(t => t.Tag)
-            .Where(e => e.Status == status)
-            .Take(6);
+            .Where(e => e.Status == status);
 
-        var live = await Query(EventStatus.Started).OrderBy(e => e.StartTime).ToArrayAsync();
-        var upcoming = await Query(EventStatus.Announced).OrderBy(e => e.StartTime).ToArrayAsync();
-        var past = await Query(EventStatus.Concluded).OrderByDescending(e => e.EndTime).ToArrayAsync();
+        var live = await Query(EventStatus.Started).OrderBy(e => e.StartTime).Take(6).ToArrayAsync();
+        var upcoming = await Query(EventStatus.Announced).OrderBy(e => e.StartTime).Take(6).ToArrayAsync();
+        var past = await Query(EventStatus.Concluded).OrderByDescending(e => e.EndTime).Take(6).ToArrayAsync();
 
         return Results.Ok(new EventSummaries(live.Map(), upcoming.Map(), past.Map()));
     }
